@@ -1,0 +1,321 @@
+# Workflow Configuration Schema
+# This schema defines the structure for project workflow configuration files.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://openhands.dev/schemas/workflow-schema.yaml"
+title: "Workflow Configuration Schema"
+description: "Schema for defining multi-agent orchestration workflows"
+
+type: object
+required:
+  - version
+  - project
+  - workflow
+
+properties:
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+$"
+    description: "Schema version (e.g., '1.0')"
+
+  project:
+    type: object
+    required:
+      - name
+      - type
+    properties:
+      name:
+        type: string
+        description: "Project name"
+      type:
+        type: string
+        enum:
+          - web
+          - mobile
+          - infrastructure
+          - data-pipeline
+          - hybrid
+          - custom
+        description: "Project type for template selection"
+      description:
+        type: string
+        description: "Project description"
+      language_policy:
+        $ref: "#/$defs/language_policy"
+
+  agents:
+    type: object
+    description: "Agent configuration"
+    properties:
+      include_templates:
+        type: array
+        items:
+          type: string
+          enum:
+            - core
+            - quality
+            - web-development
+            - mobile-development
+            - infrastructure
+            - data-engineering
+            - devops
+        description: "Built-in agent templates to include"
+      custom:
+        type: array
+        items:
+          $ref: "#/$defs/custom_agent"
+        description: "Custom agent definitions"
+      exclude:
+        type: array
+        items:
+          type: string
+        description: "Agent IDs to exclude from templates"
+
+  workflow:
+    type: object
+    required:
+      - stages
+    properties:
+      stages:
+        type: array
+        items:
+          $ref: "#/$defs/stage"
+        description: "Workflow stages in execution order"
+      error_handling:
+        $ref: "#/$defs/error_handling"
+      global_timeout_ms:
+        type: integer
+        default: 3600000
+        description: "Global workflow timeout in milliseconds (default: 1 hour)"
+
+$defs:
+  language_policy:
+    type: object
+    description: "Language policy for agent communication"
+    properties:
+      customer_facing:
+        type: string
+        default: "ja"
+        description: "Language for customer-facing communication"
+      development:
+        type: string
+        default: "en"
+        description: "Language for development/technical communication"
+      documentation:
+        type: string
+        default: "en"
+        description: "Language for documentation"
+      code_comments:
+        type: string
+        default: "en"
+        description: "Language for code comments"
+      commit_messages:
+        type: string
+        default: "en"
+        description: "Language for git commit messages"
+
+  custom_agent:
+    type: object
+    required:
+      - id
+      - name
+      - role
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+        description: "Unique agent identifier (kebab-case)"
+      name:
+        type: string
+        description: "Display name"
+      role:
+        type: string
+        enum:
+          - liaison
+          - planning
+          - audit
+          - design
+          - implementation
+          - review
+          - testing
+          - integration
+        description: "Role category"
+      description:
+        type: string
+        description: "Role description"
+      capabilities:
+        type: array
+        items:
+          type: string
+        description: "List of capabilities"
+      language_policy:
+        $ref: "#/$defs/agent_language_override"
+      timeout_ms:
+        type: integer
+        description: "Agent-specific timeout"
+      retry_policy:
+        $ref: "#/$defs/retry_policy"
+
+  agent_language_override:
+    type: object
+    properties:
+      all:
+        type: string
+        description: "Override all language settings"
+      customer_facing:
+        type: string
+      internal:
+        type: string
+
+  stage:
+    type: object
+    required:
+      - name
+      - agents
+    properties:
+      name:
+        type: string
+        description: "Stage name"
+      description:
+        type: string
+        description: "Stage description"
+      agents:
+        type: array
+        items:
+          type: string
+        description: "Agent IDs to execute in this stage"
+      execution_mode:
+        type: string
+        enum:
+          - sequential
+          - parallel
+        default: sequential
+        description: "Execution mode for agents in this stage"
+      gate:
+        $ref: "#/$defs/gate"
+      on_failure:
+        type: string
+        enum:
+          - abort
+          - retry
+          - fallback
+          - continue
+        default: abort
+        description: "Action on stage failure"
+      timeout_ms:
+        type: integer
+        description: "Stage-specific timeout"
+
+  gate:
+    type: object
+    description: "Quality gate configuration"
+    properties:
+      required_status:
+        type: string
+        enum:
+          - OK
+          - OK_WITH_WARNINGS
+        default: OK
+        description: "Required status to pass the gate"
+      allow_warnings:
+        type: boolean
+        default: true
+        description: "Allow warnings without blocking"
+      max_errors:
+        type: integer
+        default: 0
+        description: "Maximum allowed errors (0 = none)"
+
+  error_handling:
+    type: object
+    description: "Error handling configuration"
+    properties:
+      retry_policy:
+        $ref: "#/$defs/retry_policy"
+      circuit_breaker:
+        $ref: "#/$defs/circuit_breaker"
+      fallback_strategies:
+        type: array
+        items:
+          $ref: "#/$defs/fallback_strategy"
+
+  retry_policy:
+    type: object
+    properties:
+      max_attempts:
+        type: integer
+        default: 3
+        minimum: 1
+        maximum: 10
+      backoff_type:
+        type: string
+        enum:
+          - constant
+          - linear
+          - exponential
+        default: exponential
+      initial_delay_ms:
+        type: integer
+        default: 1000
+        minimum: 100
+      max_delay_ms:
+        type: integer
+        default: 60000
+      multiplier:
+        type: number
+        default: 2.0
+        description: "Backoff multiplier (for exponential/linear)"
+      jitter:
+        type: boolean
+        default: true
+        description: "Add random jitter to prevent thundering herd"
+      jitter_factor:
+        type: number
+        default: 0.1
+        minimum: 0
+        maximum: 1
+
+  circuit_breaker:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      failure_threshold:
+        type: integer
+        default: 5
+        description: "Failures before opening circuit"
+      success_threshold:
+        type: integer
+        default: 3
+        description: "Successes before closing circuit"
+      half_open_max_calls:
+        type: integer
+        default: 3
+        description: "Max calls in half-open state"
+      recovery_timeout_ms:
+        type: integer
+        default: 60000
+        description: "Time before attempting recovery"
+
+  fallback_strategy:
+    type: object
+    required:
+      - condition
+      - action
+    properties:
+      condition:
+        type: string
+        enum:
+          - max_retries_exceeded
+          - circuit_open
+          - timeout
+          - critical_failure
+      action:
+        type: string
+        enum:
+          - delegate_to_human
+          - use_cached_result
+          - escalate_to_orchestrator
+          - skip_stage
+          - abort_workflow

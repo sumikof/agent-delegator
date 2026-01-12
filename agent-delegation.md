@@ -1,6 +1,7 @@
 # OpenHands「AI開発組織」オーケストレーション設計ドキュメント（Python）
 
 ## 1. 目的
+
 OpenHands SDK の Agent Delegation（spawn/delegate）を用いて、あなた（顧客）を中心にした「仮想開発組織」を Python でオーケストレーションする。
 
 このドキュメントは **いきなりコードを書かずに**、まず「作るべき構成・責務・入出力・実行フロー・運用ルール」を定義し、実装の土台を固めることを目的とする。
@@ -10,82 +11,278 @@ OpenHands SDK の Agent Delegation（spawn/delegate）を用いて、あなた�
 ## 2. 前提とゴール
 
 ### 2.1 前提
+
 - OpenHands SDK を利用する
 - 親エージェント（Orchestrator）がサブエージェントを spawn / delegate して制御する
 - サブエージェント同士の直接通信は行わず、親がハブとして統合する
 - サブエージェントの成果物は **必ず構造化（JSON）** して返し、親が機械的に判定できるようにする
+- **設定ファイル駆動**：ワークフローは YAML/JSON で外部定義し、コード変更なしでフローを変更可能にする
+- **プロジェクトタイプ汎用**：Web、モバイル、インフラ、データパイプラインなど全種別に対応可能な抽象設計
 
 ### 2.2 ゴール（完成形）
+
 - 顧客（あなた）の依頼から、要件整理〜設計〜実装〜レビュー〜テスト〜統合までを **工程として分離**
 - 各工程は **別サブエージェント** に委譲し、必要に応じて並列実行
 - 親が「状態管理」「合否判定」「差し戻し」「成果物統合」を行う
+- プロジェクトごとにエージェント構成とワークフローをカスタマイズ可能
 
 ---
 
-## 3. 全体アーキテクチャ
+## 3. コアコンセプト
 
-### 3.1 役割一覧（サブエージェント）
-以下は初期スコープ（MVP）として必須の役割。必要に応じて追加・削減できる。
+### 3.1 エージェントアブストラクション
 
-| ID | 役割 | 主な責務 |
-|---|---|---|
-| client-liaison | 顧客窓口 | 顧客要求を仕様に翻訳し、不明点/曖昧点を抽出 |
-| planner | 計画設計 | 実施タスク分解、工程設計、優先度付け |
-| progress | 進捗管理 | 状態遷移の確認、未完/失敗タスクの再計画提案 |
-| requirements-auditor | 要件監査 | 要件の抜け/矛盾/曖昧表現の検出 |
-| api-designer | API設計 | OpenAPI/JSONSchema を作成し契約を固定 |
-| backend-dev | BE実装 | OpenAPI契約に従った実装（例: Spring Boot） |
-| frontend-dev | FE実装 | OpenAPI契約に従った実装（例: React/TS） |
-| reviewer-be | BEレビュー | 規約/品質/安全性/過剰変更の検査 |
-| reviewer-fe | FEレビュー | UI品質/型/過剰変更の検査 |
-| tester | テスト観点 | API契約に基づくテスト観点・疑似検証 |
-| quality-auditor | 品質監査 | 方針逸脱（勝手な仕様追加など）検出 |
-| integrator | 統合 | 成果物統合、最終判定、リリース候補作成 |
+全エージェントは共通インターフェースを実装し、プラグイン形式で追加・削除が可能。
 
-### 3.2 親エージェント（Orchestrator）の責務
-親は「実装」や「設計」を行わず、以下に徹する。
+詳細は [schemas/agent-interface.yaml](schemas/agent-interface.yaml) を参照。
 
-- サブエージェント生成（spawn）
-- タスク委譲（delegate）
-- 返却JSONの検証
-- 合否判定（Gate）
-- NG時の差し戻し（修正依頼）と再実行
-- 状態管理（State Machine）
-- 成果物（ファイル）の配置と最終統合
+```
+Agent Interface
+├── Identity (id, name, role)
+├── Capabilities (実行可能なアクション)
+├── Responsibilities (must_do / must_not_do / may_do)
+├── Boundaries (ファイルアクセス制限)
+├── Language Policy (言語設定)
+├── Escalation (エスカレーション先)
+└── Execution Settings (timeout, retry)
+```
 
----
+### 3.2 ワークフローエンジン
 
-## 4. 実行フロー（状態遷移）
+ワークフローは YAML 設定ファイルで定義し、以下の機能を提供：
 
-### 4.1 基本フロー（MVP）
-1. **Intake（受付）**: client-liaison が顧客要求を仕様化
-2. **Requirements Check（要件監査）**: requirements-auditor が曖昧点を列挙
-3. **Plan（計画）**: planner が工程とタスクを定義
-4. **Contract（契約）**: api-designer が OpenAPI を生成（Single Source of Truth）
-5. **Implementation（実装）**: backend-dev と frontend-dev を並列で実装
-6. **Review & QA（品質ゲート）**: reviewer-be / reviewer-fe / tester / quality-auditor を並列で実施
-7. **Integration（統合）**: integrator が成果物を統合し完了判定
-8. **Progress（再計画）**: NGがあれば progress が再実行計画を提案 → 修正ループ
+- **ステージ定義**：順次実行・並列実行の制御
+- **ゲート判定**：各ステージ終了時の品質チェック
+- **エラーハンドリング**：リトライ、サーキットブレーカー、フォールバック
+- **タイムアウト管理**：グローバル・ステージ・エージェント単位
 
-### 4.2 状態（例）
-- NEW
-- SPECIFIED
-- PLANNED
-- CONTRACT_READY
-- IMPLEMENTED
-- QA_PASSED
-- INTEGRATED
-- DONE
-- FAILED（致命的）
+詳細は [schemas/workflow-schema.yaml](schemas/workflow-schema.yaml) を参照。
+
+### 3.3 設定駆動アーキテクチャ
+
+```
+project-config.yaml          # プロジェクト固有設定
+├── templates/xxx.yaml       # プロジェクトタイプ別テンプレート
+├── schemas/                 # スキーマ定義
+│   ├── workflow-schema.yaml
+│   └── agent-interface.yaml
+└── policies/                # 運用ポリシー
+    ├── language-policy.yaml
+    └── file-policy.yaml
+```
 
 ---
 
-## 5. 入出力設計（重要）
+## 4. エージェントテンプレートシステム
 
-### 5.1 サブエージェント出力の統一フォーマット（必須）
-全サブエージェントは、返答の冒頭または末尾に **必ず JSON** を含める。
+### 4.1 組み込みテンプレートカテゴリ
 
-#### 例: 共通レスポンススキーマ（提案）
+| カテゴリ | 含まれるエージェント | 用途 |
+|----------|----------------------|------|
+| **core** | orchestrator, client-liaison, planner, progress, integrator | 全プロジェクト共通 |
+| **quality** | requirements-auditor, quality-auditor, tester | 品質管理 |
+| **web-development** | api-designer, backend-dev, frontend-dev, reviewer-be, reviewer-fe | Web アプリ |
+| **mobile-development** | mobile-architect, mobile-ios-dev, mobile-android-dev, mobile-reviewer | モバイルアプリ |
+| **infrastructure** | infra-architect, terraform-dev, k8s-dev, security-auditor | インフラ構築 |
+| **data-engineering** | data-architect, etl-dev, ml-engineer, data-validator | データパイプライン |
+| **devops** | ci-cd-engineer, monitoring-setup, release-manager | 運用自動化 |
+
+### 4.2 カスタムエージェントの追加
+
+プロジェクト固有のエージェントは、ワークフロー設定の `agents.custom` セクションで定義：
+
+```yaml
+agents:
+  include_templates:
+    - core
+    - quality
+  custom:
+    - id: "blockchain-dev"
+      name: "Blockchain Developer"
+      role: implementation
+      capabilities:
+        - write_solidity_contracts
+        - deploy_contracts
+      language_policy:
+        all: "en"
+```
+
+---
+
+## 5. ワークフロー設定
+
+### 5.1 設定ファイル構成
+
+ワークフロー設定ファイルは以下の構造を持つ：
+
+```yaml
+version: "1.0"
+
+project:
+  name: "プロジェクト名"
+  type: web | mobile | infrastructure | data-pipeline | hybrid | custom
+  language_policy:
+    customer_facing: "ja"
+    development: "en"
+
+agents:
+  include_templates: [core, quality, web-development]
+  custom: []
+  exclude: []
+
+workflow:
+  stages:
+    - name: "ステージ名"
+      agents: [agent-id-1, agent-id-2]
+      execution_mode: sequential | parallel
+      gate:
+        required_status: OK
+      on_failure: abort | retry | fallback
+  error_handling:
+    retry_policy: {...}
+    circuit_breaker: {...}
+```
+
+完全なスキーマは [schemas/workflow-schema.yaml](schemas/workflow-schema.yaml) を参照。
+
+### 5.2 プロジェクトタイプ別テンプレート
+
+- [templates/web-fullstack.yaml](templates/web-fullstack.yaml) - Web フルスタック開発
+
+追加予定：
+- `templates/mobile-app.yaml` - モバイルアプリ開発
+- `templates/infrastructure.yaml` - インフラ構築
+- `templates/data-pipeline.yaml` - データパイプライン
+
+---
+
+## 6. 役割と責任の定義
+
+### 6.1 責任範囲の3分類
+
+各エージェントは以下の3つのカテゴリで責任を定義：
+
+| 分類 | 説明 |
+|------|------|
+| **must_do** | 必ず実行すべき責務 |
+| **must_not_do** | 絶対に行ってはならない行為 |
+| **may_do** | 状況に応じて実行可能な行為 |
+
+### 6.2 境界定義
+
+ファイルアクセスと操作権限を明確に定義：
+
+```yaml
+boundaries:
+  file_patterns:
+    allowed: ["backend/**", "api/**/*.yaml"]
+    forbidden: ["frontend/**", ".env*", "**/*.secret"]
+  actions:
+    allowed: ["read", "write", "execute_tests"]
+    forbidden: ["deploy", "delete_production"]
+```
+
+### 6.3 エスカレーション
+
+問題発生時のエスカレーション先を事前定義：
+
+```yaml
+escalation:
+  on_ambiguity: requirements-auditor    # 要件が曖昧な場合
+  on_blocker: progress                  # ブロッカー発生時
+  on_security_concern: security-auditor # セキュリティ懸念
+  on_scope_creep: client-liaison        # スコープ拡大要求
+```
+
+---
+
+## 7. 通信とコンテキスト管理
+
+### 7.1 言語ポリシー
+
+詳細は [policies/language-policy.yaml](policies/language-policy.yaml) を参照。
+
+#### 基本ルール
+
+| カテゴリ | 言語 |
+|----------|------|
+| 顧客向けコミュニケーション | 日本語 |
+| 開発内部コミュニケーション | 英語 |
+| コードコメント | 英語 |
+| 技術ドキュメント | 英語 |
+| Git コミットメッセージ | 英語 |
+
+#### エージェント別設定
+
+| エージェント | 顧客向け | 開発内部 |
+|--------------|----------|----------|
+| client-liaison | 日本語 | 日本語 |
+| progress | 日本語 | 英語 |
+| その他開発系 | - | 英語 |
+
+### 7.2 コンテキスト共有
+
+エージェント間で共有するコンテキスト：
+
+```yaml
+shared_context:
+  project_metadata:     # プロジェクト情報
+  api_contract:         # API 契約（Single Source of Truth）
+  current_state:        # 現在の状態
+  completed_stages:     # 完了ステージ
+  pending_issues:       # 未解決の課題
+```
+
+ストレージ形式：JSON（`workspace/.context/` 配下）
+
+---
+
+## 8. 実行フロー（状態遷移）
+
+### 8.1 基本フロー
+
+```
+1. Intake（受付）
+   └─ client-liaison が顧客要求を仕様化
+
+2. Requirements Check（要件監査）
+   └─ requirements-auditor が曖昧点を列挙
+
+3. Plan（計画）
+   └─ planner が工程とタスクを定義
+
+4. Contract（契約）
+   └─ api-designer が OpenAPI を生成（Single Source of Truth）
+
+5. Implementation（実装）
+   └─ backend-dev と frontend-dev を並列で実装
+
+6. Review & QA（品質ゲート）
+   └─ reviewer-be / reviewer-fe / tester / quality-auditor を並列で実施
+
+7. Integration（統合）
+   └─ integrator が成果物を統合し完了判定
+
+8. Progress（再計画）
+   └─ NG があれば progress が再実行計画を提案 → 修正ループ
+```
+
+### 8.2 状態
+
+```
+NEW → SPECIFIED → PLANNED → CONTRACT_READY → IMPLEMENTED → QA_PASSED → INTEGRATED → DONE
+                                                ↓                ↓
+                                            FAILED ←←←←←←←←←←←←←←
+```
+
+---
+
+## 9. 入出力設計
+
+### 9.1 共通レスポンススキーマ
+
+全サブエージェントは以下の JSON 形式で応答：
+
 ```json
 {
   "status": "OK | NG",
@@ -94,100 +291,236 @@ OpenHands SDK の Agent Delegation（spawn/delegate）を用いて、あなた�
     {
       "severity": "INFO | WARN | ERROR",
       "message": "指摘内容",
-      "ref": "対象ファイルや行番号などの任意参照"
+      "ref": "対象ファイルや行番号",
+      "suggestion": "改善提案"
     }
   ],
   "artifacts": [
     {
       "path": "relative/path/to/file",
-      "type": "code | spec | doc",
-      "desc": "成果物の説明"
+      "type": "code | spec | doc | config | report",
+      "desc": "成果物の説明",
+      "checksum": "SHA256ハッシュ"
     }
   ],
-  "next_actions": [
-    "次に行うべき作業"
-  ]
+  "next_actions": ["次に行うべき作業"],
+  "context": {},
+  "trace_id": "トレースID",
+  "execution_time_ms": 1234
 }
 ```
-### 判定ルール
 
-- `status = NG` の場合、必ず `findings` に `severity = ERROR` を1件以上含める  
-- `artifacts.path` は必ず workspace 上の実ファイルと一致させる  
-- 親エージェントは `status` と `findings.severity` のみを用いて工程の可否を自動判定する  
-- `next_actions` は次に親エージェントが delegate すべき作業を自然文で記載する  
+### 9.2 判定ルール
 
----
+- `status = NG` の場合、必ず `findings` に `severity = ERROR` を1件以上含める
+- `artifacts.path` は必ず workspace 上の実ファイルと一致させる
+- 親エージェントは `status` と `findings.severity` のみを用いて工程の可否を自動判定
 
-## 5.2 成果物の標準ディレクトリ構成
+### 9.3 成果物の標準ディレクトリ構成
+
+```
 workspace/
 ├─ spec/           # 要件・合意仕様
 ├─ api/            # OpenAPI / JSONSchema
 ├─ backend/        # バックエンド実装
 ├─ frontend/       # フロントエンド実装
 ├─ reports/        # レビュー・テスト・監査結果
-└─ integration/    # 統合成果物
-
-
-
-すべてのサブエージェントは、このディレクトリ規約に従って成果物を保存する。
-
----
-
-## 6. ルール（暴走防止）
-
-### 6.1 契約（Contract）最優先ルール
-
-- API 定義（OpenAPI / JSONSchema）は唯一の正解  
-- FE / BE は契約から逸脱してはならない  
-- 項目の追加・削除・型変更は禁止  
-- 変更が必要な場合は必ず `status = NG` として差し戻す  
-
-### 6.2 最小変更原則
-
-- 不要なリファクタリングは禁止  
-- コメントは必ず保持する  
-- 既存の振る舞いを変更しない  
-
-### 6.3 品質ゲート
-
-- reviewer-be / reviewer-fe / tester / quality-auditor のいずれかが NG を出した場合、次工程に進めない  
-- NG の指摘内容は必ず `reports/` 配下に保存する  
+├─ integration/    # 統合成果物
+├─ .context/       # エージェントコンテキスト（内部用）
+└─ .logs/          # 操作ログ（内部用）
+```
 
 ---
 
-## 7. Python オーケストレーション実装方針
+## 10. 運用ポリシー
 
-### 7.1 モジュール構成案
+### 10.1 ファイル更新ポリシー
 
+詳細は [policies/file-policy.yaml](policies/file-policy.yaml) を参照。
+
+#### バックアップファイル禁止
+
+**バックアップファイルは作成しない。** Git 履歴がバージョン管理の役割を果たす。
+
+禁止されるファイルパターン：
+- `*.bak`, `*.backup`, `*.orig`, `*.old`
+- `*.swp`, `*.swo`, `*~`
+- `*.tmp`, `#*#`, `.#*`
+
+#### アトミック操作
+
+ファイル更新は一時ファイル経由でアトミックに実行し、部分書き込みによる破損を防止。
+
+#### ファイル命名規則
+
+- ファイル名：kebab-case
+- 最大長：100文字
+- 禁止文字：スペース、`<>:"|?*`
+
+### 10.2 契約（Contract）最優先ルール
+
+- API 定義（OpenAPI / JSONSchema）は唯一の正解
+- FE / BE は契約から逸脱してはならない
+- 項目の追加・削除・型変更は禁止
+- 変更が必要な場合は必ず `status = NG` として差し戻す
+
+### 10.3 最小変更原則
+
+- 不要なリファクタリングは禁止
+- コメントは必ず保持する
+- 既存の振る舞いを変更しない
+- 依頼された範囲のみを変更する
+
+---
+
+## 11. 信頼性とエラーハンドリング
+
+### 11.1 リトライポリシー
+
+```yaml
+retry_policy:
+  max_attempts: 3
+  backoff_type: exponential
+  initial_delay_ms: 1000
+  max_delay_ms: 60000
+  multiplier: 2.0
+  jitter: true
+  jitter_factor: 0.1
+```
+
+#### エラー分類
+
+| 分類 | コード例 | デフォルトアクション |
+|------|----------|----------------------|
+| 一時的 | TIMEOUT, RATE_LIMITED | リトライ |
+| 永続的 | INVALID_INPUT, CONTRACT_VIOLATION | エスカレーション |
+| 回復可能 | PARTIAL_FAILURE | 部分リトライ |
+
+### 11.2 サーキットブレーカー
+
+連続失敗時に自動的に処理を停止し、システム保護：
+
+```yaml
+circuit_breaker:
+  failure_threshold: 5      # 5回失敗でオープン
+  success_threshold: 3      # 3回成功でクローズ
+  recovery_timeout_ms: 60000
+```
+
+### 11.3 フォールバック戦略
+
+| 条件 | アクション |
+|------|------------|
+| リトライ上限超過 | オーケストレーターにエスカレート |
+| サーキットオープン | 人間に委譲 |
+| 致命的エラー | ワークフロー中断 |
+
+---
+
+## 12. 並列実行ガイドライン
+
+### 12.1 並列化可能な組み合わせ
+
+| ステージ | エージェント | 条件 |
+|----------|--------------|------|
+| 実装 | backend-dev, frontend-dev | 共有リソースなし |
+| レビュー | reviewer-be, reviewer-fe, tester, quality-auditor | 独立レビュー |
+
+### 12.2 直列化が必須なケース
+
+| 理由 | シーケンス |
+|------|------------|
+| 依存関係 | api-designer → backend-dev |
+| データ依存 | requirements-auditor → planner |
+
+### 12.3 リソースロック
+
+並列実行時のファイル競合を防止：
+
+```yaml
+resource_locking:
+  type: file
+  scope: exclusive
+  timeout_ms: 30000
+```
+
+---
+
+## 13. ログとトレーサビリティ
+
+### 13.1 構造化ログ
+
+```json
+{
+  "timestamp": "2025-01-12T10:00:00Z",
+  "level": "INFO",
+  "agent_id": "backend-dev",
+  "trace_id": "abc123",
+  "span_id": "def456",
+  "message": "API implementation completed",
+  "metadata": {
+    "files_modified": 5,
+    "tests_passed": 42
+  }
+}
+```
+
+### 13.2 監査ログ
+
+記録対象イベント：
+- ファイル作成・変更・削除
+- エージェント生成
+- タスク委譲
+- ゲート通過・失敗
+
+保持期間：90日
+
+---
+
+## 14. Python オーケストレーション実装方針
+
+### 14.1 モジュール構成
+
+```
 orchestrator/
-├─ main.py        # エントリポイント
-├─ config.py      # LLM / Tool 設定
-├─ roles.py       # サブエージェント用プロンプト
-├─ state.py       # 状態管理
-├─ tasks.py       # delegate 用タスク定義
-├─ validators.py  # JSON検証
-└─ workspace.py   # ファイル操作
+├─ main.py           # エントリポイント
+├─ config.py         # 設定ローダー
+├─ workflow.py       # ワークフローエンジン
+├─ agents/
+│   ├─ base.py       # 基底エージェントクラス
+│   ├─ registry.py   # エージェントレジストリ
+│   └─ loader.py     # テンプレートローダー
+├─ state.py          # 状態管理
+├─ validators.py     # JSON検証
+├─ error_handler.py  # エラーハンドリング
+├─ context.py        # コンテキスト管理
+├─ logging.py        # ログ設定
+└─ workspace.py      # ファイル操作
+```
 
+### 14.2 設定ローダー
 
----
-
-## 8. 実行フロー（MVP）
-
-1. client-liaison が顧客要求を仕様化  
-2. api-designer が OpenAPI を作成  
-3. backend-dev / frontend-dev を並列で delegate  
-4. reviewer-be / reviewer-fe / tester / quality-auditor を並列で delegate  
-5. 全工程が OK の場合 integrator へ進む  
-6. NG があれば progress により再計画し、該当工程を再実行  
-
----
-
-## 9. 次に作成する成果物
-
-- `roles.md` : 各サブエージェントのプロンプト定義  
-- `response_schema.json` : 共通レスポンススキーマ  
-- `state_machine.md` : 状態遷移定義  
-- `orchestrator_skeleton.py` : 親エージェントの雛形実装  
+```python
+class ConfigLoader:
+    def load_workflow(self, path: str) -> WorkflowConfig
+    def load_agents(self, templates: list[str]) -> list[AgentConfig]
+    def load_policies(self) -> Policies
+```
 
 ---
 
+## 15. 次に作成する成果物
+
+### 優先度：高
+- [ ] `orchestrator_skeleton.py` - 親エージェントの雛形実装
+- [ ] `response_schema.json` - 共通レスポンススキーマ（JSON Schema）
+- [ ] `state_machine.md` - 状態遷移定義の詳細
+
+### 優先度：中
+- [ ] `templates/mobile-app.yaml` - モバイルアプリ開発テンプレート
+- [ ] `templates/infrastructure.yaml` - インフラ構築テンプレート
+- [ ] `agents/` - 各エージェントの詳細定義
+
+### 優先度：低
+- [ ] `examples/` - 使用例
+- [ ] `tests/` - テストケース

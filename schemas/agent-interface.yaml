@@ -1,0 +1,359 @@
+# Agent Interface Schema
+# This schema defines the contract that all agents must implement.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://openhands.dev/schemas/agent-interface.yaml"
+title: "Agent Interface Schema"
+description: "Schema defining the interface for all agents in the orchestration system"
+
+type: object
+required:
+  - id
+  - name
+  - role
+  - description
+  - responsibilities
+
+properties:
+  # === Identity ===
+  id:
+    type: string
+    pattern: "^[a-z][a-z0-9-]*$"
+    description: "Unique identifier (kebab-case)"
+    examples:
+      - "backend-dev"
+      - "client-liaison"
+      - "api-designer"
+
+  name:
+    type: string
+    description: "Human-readable display name"
+    examples:
+      - "Backend Developer"
+      - "Customer Liaison"
+
+  role:
+    type: string
+    enum:
+      - liaison
+      - planning
+      - audit
+      - design
+      - implementation
+      - review
+      - testing
+      - integration
+    description: "Role category"
+
+  description:
+    type: string
+    description: "Detailed description of the agent's purpose"
+
+  # === Capabilities ===
+  capabilities:
+    type: array
+    items:
+      type: string
+    description: "List of actions this agent can perform"
+    examples:
+      - ["write_api_spec", "validate_openapi", "generate_schema"]
+      - ["write_code", "run_tests", "fix_bugs"]
+
+  # === Responsibilities ===
+  responsibilities:
+    type: object
+    required:
+      - must_do
+      - must_not_do
+    properties:
+      must_do:
+        type: array
+        items:
+          type: string
+        description: "Required responsibilities"
+      must_not_do:
+        type: array
+        items:
+          type: string
+        description: "Prohibited actions"
+      may_do:
+        type: array
+        items:
+          type: string
+        description: "Optional/allowed actions"
+
+  # === Boundaries ===
+  boundaries:
+    type: object
+    properties:
+      file_patterns:
+        type: object
+        properties:
+          allowed:
+            type: array
+            items:
+              type: string
+            description: "Glob patterns for allowed file access"
+            examples:
+              - ["backend/**", "api/**/*.yaml"]
+          forbidden:
+            type: array
+            items:
+              type: string
+            description: "Glob patterns for forbidden file access"
+            examples:
+              - ["frontend/**", ".env*", "**/*.secret"]
+      actions:
+        type: object
+        properties:
+          allowed:
+            type: array
+            items:
+              type: string
+            description: "Allowed system actions"
+          forbidden:
+            type: array
+            items:
+              type: string
+            description: "Forbidden system actions"
+
+  # === Communication ===
+  language_policy:
+    type: object
+    properties:
+      customer_facing:
+        type: string
+        description: "Language for customer communication"
+      internal:
+        type: string
+        description: "Language for internal/dev communication"
+      all:
+        type: string
+        description: "Override all language settings"
+
+  # === Escalation ===
+  escalation:
+    type: object
+    description: "Escalation paths for various situations"
+    properties:
+      on_ambiguity:
+        type: string
+        description: "Agent to escalate to when requirements are ambiguous"
+      on_blocker:
+        type: string
+        description: "Agent to escalate to when blocked"
+      on_security_concern:
+        type: string
+        description: "Agent to escalate to for security issues"
+      on_scope_creep:
+        type: string
+        description: "Agent to escalate to for scope expansion requests"
+
+  # === Execution Settings ===
+  timeout_ms:
+    type: integer
+    default: 300000
+    minimum: 10000
+    maximum: 3600000
+    description: "Execution timeout in milliseconds"
+
+  retry_policy:
+    type: object
+    properties:
+      max_attempts:
+        type: integer
+        default: 3
+      backoff_type:
+        type: string
+        enum: ["constant", "linear", "exponential"]
+        default: "exponential"
+      initial_delay_ms:
+        type: integer
+        default: 1000
+
+  # === Input/Output ===
+  inputs:
+    type: object
+    description: "Expected input schema"
+    additionalProperties: true
+
+  outputs:
+    type: object
+    description: "Output schema (extends common_response_schema)"
+    properties:
+      extends:
+        type: string
+        const: "common_response_schema"
+      additional:
+        type: object
+        additionalProperties: true
+
+  # === Lifecycle Hooks ===
+  hooks:
+    type: object
+    properties:
+      before_execute:
+        type: array
+        items:
+          type: string
+        description: "Commands to run before execution"
+      after_execute:
+        type: array
+        items:
+          type: string
+        description: "Commands to run after execution"
+      on_error:
+        type: array
+        items:
+          type: string
+        description: "Commands to run on error"
+
+---
+# Common Response Schema
+# All agents must return responses conforming to this schema.
+
+common_response_schema:
+  type: object
+  required:
+    - status
+    - summary
+  properties:
+    status:
+      type: string
+      enum:
+        - OK
+        - NG
+      description: "Execution status"
+
+    summary:
+      type: string
+      description: "Brief summary of execution result"
+
+    findings:
+      type: array
+      items:
+        type: object
+        required:
+          - severity
+          - message
+        properties:
+          severity:
+            type: string
+            enum:
+              - INFO
+              - WARN
+              - ERROR
+          message:
+            type: string
+          ref:
+            type: string
+            description: "Reference (file path, line number, etc.)"
+          suggestion:
+            type: string
+            description: "Suggested fix or action"
+      description: "List of findings/issues"
+
+    artifacts:
+      type: array
+      items:
+        type: object
+        required:
+          - path
+          - type
+        properties:
+          path:
+            type: string
+            description: "Relative path to artifact"
+          type:
+            type: string
+            enum:
+              - code
+              - spec
+              - doc
+              - config
+              - report
+          desc:
+            type: string
+            description: "Artifact description"
+          checksum:
+            type: string
+            description: "SHA256 checksum"
+      description: "List of created/modified artifacts"
+
+    next_actions:
+      type: array
+      items:
+        type: string
+      description: "Recommended next actions"
+
+    context:
+      type: object
+      description: "Context to pass to next agent"
+      additionalProperties: true
+
+    trace_id:
+      type: string
+      description: "Trace ID for logging/debugging"
+
+    execution_time_ms:
+      type: integer
+      description: "Execution time in milliseconds"
+
+---
+# Built-in Agent Templates
+
+templates:
+  core:
+    description: "Core agents required for all projects"
+    agents:
+      - client-liaison
+      - planner
+      - progress
+      - integrator
+
+  quality:
+    description: "Quality assurance agents"
+    agents:
+      - requirements-auditor
+      - quality-auditor
+      - tester
+
+  web-development:
+    description: "Web application development agents"
+    agents:
+      - api-designer
+      - backend-dev
+      - frontend-dev
+      - reviewer-be
+      - reviewer-fe
+
+  mobile-development:
+    description: "Mobile application development agents"
+    agents:
+      - mobile-architect
+      - mobile-ios-dev
+      - mobile-android-dev
+      - mobile-reviewer
+
+  infrastructure:
+    description: "Infrastructure and DevOps agents"
+    agents:
+      - infra-architect
+      - terraform-dev
+      - k8s-dev
+      - security-auditor
+
+  data-engineering:
+    description: "Data pipeline and ML agents"
+    agents:
+      - data-architect
+      - etl-dev
+      - ml-engineer
+      - data-validator
+
+  devops:
+    description: "DevOps and release management agents"
+    agents:
+      - ci-cd-engineer
+      - monitoring-setup
+      - release-manager

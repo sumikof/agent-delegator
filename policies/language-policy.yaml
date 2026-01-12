@@ -1,0 +1,192 @@
+# Language Policy Configuration
+# Defines language rules for agent communication and documentation.
+
+version: "1.0"
+description: "Language policy for multi-agent orchestration system"
+
+# === Global Defaults ===
+# These settings apply to all agents unless overridden.
+
+global_defaults:
+  # Language for customer-facing communication (reports, status updates, questions)
+  customer_facing: "ja"
+
+  # Language for internal development communication (code reviews, technical discussions)
+  internal_development: "en"
+
+  # Language for code comments
+  code_comments: "en"
+
+  # Language for technical documentation (API docs, architecture docs)
+  technical_documentation: "en"
+
+  # Language for user-facing documentation (user guides, tutorials)
+  user_documentation: "ja"
+
+  # Language for git commit messages
+  commit_messages: "en"
+
+  # Language for log messages
+  log_messages: "en"
+
+  # Language for error messages shown to users
+  user_error_messages: "ja"
+
+  # Language for internal error messages (logs, debugging)
+  internal_error_messages: "en"
+
+# === Agent-Specific Overrides ===
+# Override global defaults for specific agents.
+
+agent_overrides:
+  # Customer Liaison - All communication in Japanese
+  client-liaison:
+    customer_facing: "ja"
+    internal_development: "ja"
+    description: "Customer-facing agent communicates entirely in Japanese"
+
+  # Progress Manager - Customer reports in Japanese, internal in English
+  progress:
+    customer_facing: "ja"
+    internal_development: "en"
+    description: "Reports progress to customers in Japanese, internal tracking in English"
+
+  # Development agents - All in English
+  backend-dev:
+    all: "en"
+    description: "All development communication in English"
+
+  frontend-dev:
+    all: "en"
+    description: "All development communication in English"
+
+  api-designer:
+    all: "en"
+    description: "API specifications and documentation in English"
+
+  reviewer-be:
+    all: "en"
+    description: "Code review comments in English"
+
+  reviewer-fe:
+    all: "en"
+    description: "Code review comments in English"
+
+  tester:
+    all: "en"
+    description: "Test cases and reports in English"
+
+  quality-auditor:
+    all: "en"
+    description: "Audit reports in English"
+
+  requirements-auditor:
+    all: "en"
+    description: "Requirements analysis in English"
+
+  planner:
+    all: "en"
+    description: "Planning documents in English"
+
+  integrator:
+    all: "en"
+    description: "Integration reports in English"
+
+# === Translation Rules ===
+# Rules for when translation between languages is needed.
+
+translation_rules:
+  # Customer requirements translation
+  - name: "customer_requirements"
+    from: "ja"
+    to: "en"
+    performed_by: "client-liaison"
+    context: "Translating customer requirements to technical specifications"
+    requirements:
+      - "Preserve technical terms without translation"
+      - "Maintain exact meaning of requirements"
+      - "Flag ambiguous terms for clarification"
+
+  # Progress reporting translation
+  - name: "progress_report"
+    from: "en"
+    to: "ja"
+    performed_by: "progress"
+    context: "Reporting development progress to customers"
+    requirements:
+      - "Use business-friendly language"
+      - "Avoid technical jargon"
+      - "Provide clear status indicators"
+
+  # Error message translation
+  - name: "user_errors"
+    from: "en"
+    to: "ja"
+    performed_by: "client-liaison"
+    context: "Translating error messages for end users"
+    requirements:
+      - "Provide actionable guidance"
+      - "Avoid technical details"
+      - "Maintain professional tone"
+
+# === Content Guidelines ===
+# Guidelines for content in each language.
+
+content_guidelines:
+  ja:
+    formal_level: "polite"  # 丁寧語を使用
+    honorifics: true
+    sentence_endings:
+      statements: "です/ます"
+      requests: "ください"
+      suggestions: "いたします"
+    prohibited:
+      - "タメ口"
+      - "過度なカタカナ語"
+    notes:
+      - "技術用語は英語のまま使用可"
+      - "顧客への報告は敬語を使用"
+
+  en:
+    formal_level: "professional"
+    use_contractions: false
+    voice: "active"
+    prohibited:
+      - "Slang"
+      - "Informal abbreviations"
+    notes:
+      - "Use clear, concise language"
+      - "Avoid ambiguous pronouns"
+      - "Define acronyms on first use"
+
+# === Validation Rules ===
+# Rules for validating language policy compliance.
+
+validation_rules:
+  - name: "code_comments_language"
+    check: "All code comments are in English"
+    severity: WARN
+    auto_fix: false
+
+  - name: "customer_response_language"
+    check: "Customer-facing responses from client-liaison are in Japanese"
+    severity: ERROR
+    auto_fix: false
+
+  - name: "commit_message_language"
+    check: "Commit messages are in English"
+    severity: WARN
+    auto_fix: false
+
+  - name: "variable_names"
+    check: "Variable and function names use English words"
+    severity: ERROR
+    auto_fix: false
+
+# === Encoding ===
+# Encoding settings for different languages.
+
+encoding:
+  default: "UTF-8"
+  line_endings: "LF"
+  bom: false

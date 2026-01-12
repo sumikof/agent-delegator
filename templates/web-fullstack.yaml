@@ -1,0 +1,407 @@
+# Web Fullstack Project Template
+# Template for web application development projects with frontend and backend.
+
+version: "1.0"
+
+project:
+  name: "Web Fullstack Project"
+  type: web
+  description: "Full-stack web application with API backend and frontend"
+  language_policy:
+    customer_facing: "ja"
+    development: "en"
+    documentation: "en"
+    code_comments: "en"
+    commit_messages: "en"
+
+agents:
+  include_templates:
+    - core
+    - quality
+    - web-development
+
+workflow:
+  global_timeout_ms: 7200000  # 2 hours
+
+  stages:
+    # Stage 1: Customer Requirements Intake
+    - name: "intake"
+      description: "Receive and translate customer requirements"
+      agents:
+        - client-liaison
+      execution_mode: sequential
+      timeout_ms: 600000  # 10 minutes
+
+    # Stage 2: Requirements Audit
+    - name: "requirements-audit"
+      description: "Verify requirements completeness and clarity"
+      agents:
+        - requirements-auditor
+      execution_mode: sequential
+      gate:
+        required_status: OK
+        allow_warnings: true
+      on_failure: abort
+      timeout_ms: 300000
+
+    # Stage 3: Planning
+    - name: "planning"
+      description: "Create implementation plan and task breakdown"
+      agents:
+        - planner
+      execution_mode: sequential
+      gate:
+        required_status: OK
+      timeout_ms: 300000
+
+    # Stage 4: API Contract Design
+    - name: "contract"
+      description: "Design and validate API contract (Single Source of Truth)"
+      agents:
+        - api-designer
+      execution_mode: sequential
+      gate:
+        required_status: OK
+        allow_warnings: false
+      on_failure: abort
+      timeout_ms: 600000
+
+    # Stage 5: Implementation (Parallel)
+    - name: "implementation"
+      description: "Implement backend and frontend in parallel"
+      agents:
+        - backend-dev
+        - frontend-dev
+      execution_mode: parallel
+      gate:
+        required_status: OK
+      on_failure: retry
+      timeout_ms: 1800000  # 30 minutes
+
+    # Stage 6: Review and QA (Parallel)
+    - name: "review-qa"
+      description: "Code review, testing, and quality audit"
+      agents:
+        - reviewer-be
+        - reviewer-fe
+        - tester
+        - quality-auditor
+      execution_mode: parallel
+      gate:
+        required_status: OK
+        allow_warnings: true
+        max_errors: 0
+      on_failure: retry
+      timeout_ms: 900000  # 15 minutes
+
+    # Stage 7: Integration
+    - name: "integration"
+      description: "Integrate all artifacts and perform final validation"
+      agents:
+        - integrator
+      execution_mode: sequential
+      gate:
+        required_status: OK
+      timeout_ms: 600000
+
+  error_handling:
+    retry_policy:
+      max_attempts: 3
+      backoff_type: exponential
+      initial_delay_ms: 2000
+      max_delay_ms: 30000
+      multiplier: 2.0
+      jitter: true
+      jitter_factor: 0.1
+
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      success_threshold: 3
+      recovery_timeout_ms: 60000
+
+    fallback_strategies:
+      - condition: max_retries_exceeded
+        action: escalate_to_orchestrator
+      - condition: circuit_open
+        action: delegate_to_human
+      - condition: critical_failure
+        action: abort_workflow
+
+---
+# Agent Definitions for Web Fullstack Template
+
+agents_config:
+  # === Core Agents ===
+
+  client-liaison:
+    name: "Customer Liaison"
+    role: liaison
+    description: "Receives customer requirements and translates them into technical specifications"
+    language_policy:
+      customer_facing: "ja"
+      internal: "ja"
+    responsibilities:
+      must_do:
+        - "Communicate with customers in Japanese"
+        - "Translate requirements into clear specifications"
+        - "Identify ambiguous or missing requirements"
+        - "Confirm understanding with customers"
+      must_not_do:
+        - "Make technical decisions without consultation"
+        - "Promise delivery timelines"
+        - "Modify existing specifications without approval"
+      may_do:
+        - "Suggest alternatives to customer requests"
+        - "Propose requirement priorities"
+    escalation:
+      on_ambiguity: requirements-auditor
+      on_blocker: progress
+    timeout_ms: 600000
+
+  planner:
+    name: "Project Planner"
+    role: planning
+    description: "Creates implementation plans and task breakdowns"
+    language_policy:
+      all: "en"
+    responsibilities:
+      must_do:
+        - "Break down requirements into implementable tasks"
+        - "Define task dependencies"
+        - "Assign tasks to appropriate agents"
+        - "Identify risks and blockers"
+      must_not_do:
+        - "Implement code directly"
+        - "Skip requirement validation"
+      may_do:
+        - "Suggest architectural approaches"
+        - "Recommend technology choices"
+    timeout_ms: 300000
+
+  progress:
+    name: "Progress Manager"
+    role: planning
+    description: "Monitors execution progress and proposes re-planning when needed"
+    language_policy:
+      customer_facing: "ja"
+      internal: "en"
+    responsibilities:
+      must_do:
+        - "Track task completion status"
+        - "Identify blocked or failed tasks"
+        - "Propose re-execution plans"
+        - "Report progress to customer in Japanese"
+      must_not_do:
+        - "Execute tasks directly"
+        - "Hide failures from orchestrator"
+    timeout_ms: 300000
+
+  integrator:
+    name: "Integration Manager"
+    role: integration
+    description: "Integrates all artifacts and performs final validation"
+    language_policy:
+      all: "en"
+    responsibilities:
+      must_do:
+        - "Verify all artifacts are present"
+        - "Validate integration compatibility"
+        - "Create release candidate"
+        - "Perform final sanity checks"
+      must_not_do:
+        - "Modify code without review"
+        - "Skip validation steps"
+    timeout_ms: 600000
+
+  # === Quality Agents ===
+
+  requirements-auditor:
+    name: "Requirements Auditor"
+    role: audit
+    description: "Validates requirements for completeness, consistency, and clarity"
+    language_policy:
+      all: "en"
+    responsibilities:
+      must_do:
+        - "Check for ambiguous requirements"
+        - "Identify contradictions"
+        - "Verify completeness"
+        - "Document all findings"
+      must_not_do:
+        - "Modify requirements directly"
+        - "Approve incomplete requirements"
+    timeout_ms: 300000
+
+  quality-auditor:
+    name: "Quality Auditor"
+    role: audit
+    description: "Detects policy violations and unauthorized scope expansion"
+    language_policy:
+      all: "en"
+    responsibilities:
+      must_do:
+        - "Check for scope creep"
+        - "Verify contract compliance"
+        - "Detect unauthorized features"
+        - "Validate coding standards"
+      must_not_do:
+        - "Approve violations"
+        - "Modify code"
+    escalation:
+      on_scope_creep: client-liaison
+    timeout_ms: 300000
+
+  tester:
+    name: "Test Engineer"
+    role: testing
+    description: "Creates test cases and validates implementation against contract"
+    language_policy:
+      all: "en"
+    responsibilities:
+      must_do:
+        - "Generate test cases from API contract"
+        - "Validate endpoint behavior"
+        - "Document test results"
+        - "Report all failures"
+      must_not_do:
+        - "Modify implementation code"
+        - "Skip contract-defined tests"
+    timeout_ms: 600000
+
+  # === Web Development Agents ===
+
+  api-designer:
+    name: "API Designer"
+    role: design
+    description: "Creates OpenAPI specifications as the single source of truth"
+    language_policy:
+      all: "en"
+    boundaries:
+      file_patterns:
+        allowed:
+          - "api/**/*.yaml"
+          - "api/**/*.json"
+        forbidden:
+          - "backend/**"
+          - "frontend/**"
+    responsibilities:
+      must_do:
+        - "Create complete OpenAPI specification"
+        - "Define all request/response schemas"
+        - "Document all endpoints"
+        - "Validate schema consistency"
+      must_not_do:
+        - "Implement endpoints"
+        - "Modify implementation code"
+    timeout_ms: 600000
+
+  backend-dev:
+    name: "Backend Developer"
+    role: implementation
+    description: "Implements backend API according to OpenAPI contract"
+    language_policy:
+      all: "en"
+    boundaries:
+      file_patterns:
+        allowed:
+          - "backend/**"
+          - "api/**/*.yaml"
+        forbidden:
+          - "frontend/**"
+          - ".env*"
+          - "**/*.secret"
+      actions:
+        allowed:
+          - "read"
+          - "write"
+          - "execute_tests"
+        forbidden:
+          - "deploy"
+          - "delete_production"
+    responsibilities:
+      must_do:
+        - "Implement exactly what API contract specifies"
+        - "Write unit tests"
+        - "Handle errors appropriately"
+        - "Follow coding standards"
+      must_not_do:
+        - "Modify API contract"
+        - "Add undocumented endpoints"
+        - "Access frontend code"
+        - "Store secrets in code"
+      may_do:
+        - "Propose performance optimizations"
+        - "Suggest security improvements"
+    escalation:
+      on_ambiguity: api-designer
+      on_blocker: progress
+      on_security_concern: quality-auditor
+    timeout_ms: 900000
+
+  frontend-dev:
+    name: "Frontend Developer"
+    role: implementation
+    description: "Implements frontend according to API contract"
+    language_policy:
+      all: "en"
+    boundaries:
+      file_patterns:
+        allowed:
+          - "frontend/**"
+          - "api/**/*.yaml"
+        forbidden:
+          - "backend/**"
+          - ".env*"
+    responsibilities:
+      must_do:
+        - "Implement UI according to specifications"
+        - "Integrate with API contract"
+        - "Write component tests"
+        - "Follow accessibility guidelines"
+      must_not_do:
+        - "Modify API contract"
+        - "Add undocumented API calls"
+        - "Access backend code"
+      may_do:
+        - "Propose UX improvements"
+    escalation:
+      on_ambiguity: api-designer
+      on_blocker: progress
+    timeout_ms: 900000
+
+  reviewer-be:
+    name: "Backend Reviewer"
+    role: review
+    description: "Reviews backend code for quality, security, and contract compliance"
+    language_policy:
+      all: "en"
+    responsibilities:
+      must_do:
+        - "Verify API contract compliance"
+        - "Check security vulnerabilities"
+        - "Validate error handling"
+        - "Ensure coding standards"
+        - "Detect over-engineering"
+      must_not_do:
+        - "Modify code directly"
+        - "Approve contract violations"
+    timeout_ms: 600000
+
+  reviewer-fe:
+    name: "Frontend Reviewer"
+    role: review
+    description: "Reviews frontend code for quality, accessibility, and contract compliance"
+    language_policy:
+      all: "en"
+    responsibilities:
+      must_do:
+        - "Verify API contract compliance"
+        - "Check accessibility"
+        - "Validate component structure"
+        - "Ensure coding standards"
+        - "Detect scope creep"
+      must_not_do:
+        - "Modify code directly"
+        - "Approve contract violations"
+    timeout_ms: 600000

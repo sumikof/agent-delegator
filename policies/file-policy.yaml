@@ -1,0 +1,268 @@
+# File Operation Policy Configuration
+# Defines rules for file operations, backup handling, and naming conventions.
+
+version: "1.0"
+description: "File operation policy for multi-agent orchestration system"
+
+# === Backup Policy ===
+# IMPORTANT: Backup files are NOT created.
+# Git history serves as the version control mechanism.
+
+backup:
+  enabled: false
+  reason: "Git history provides version control. Backup files clutter the workspace and cause confusion."
+
+  # Forbidden backup file patterns - these should never be created
+  forbidden_patterns:
+    - "*.bak"
+    - "*.backup"
+    - "*.orig"
+    - "*.old"
+    - "*.save"
+    - "*.swp"
+    - "*.swo"
+    - "*~"
+    - "*.tmp"
+    - "#*#"
+    - ".#*"
+
+  # If any of these files are detected, they should be removed
+  cleanup:
+    enabled: true
+    on_detection: "warn_and_remove"
+    exclude_from_commit: true
+
+# === Atomic Operations ===
+# File updates should be atomic to prevent corruption.
+
+atomic_operations:
+  enabled: true
+
+  # Write to temp file first, then rename
+  strategy: "write_and_rename"
+
+  # Temp file naming
+  temp_file:
+    prefix: ".tmp_"
+    suffix: ""
+    directory: "same_as_target"
+
+  # On failure, ensure partial writes don't corrupt files
+  on_failure:
+    action: "remove_temp"
+    preserve_original: true
+
+# === File Naming Conventions ===
+
+naming_conventions:
+  # General file naming
+  files:
+    case: "kebab-case"
+    max_length: 100
+    allowed_characters: "a-z0-9-_."
+    prohibited_characters: " <>:\"|?*"
+
+  # Directory naming
+  directories:
+    case: "kebab-case"
+    max_length: 50
+    allowed_characters: "a-z0-9-_"
+
+  # Special files (configuration, etc.)
+  config_files:
+    allowed_prefixes:
+      - "."
+    allowed_names:
+      - ".gitignore"
+      - ".env"
+      - ".env.example"
+      - "Dockerfile"
+      - "Makefile"
+
+# === Forbidden Files ===
+# Files that should never be created or modified by agents.
+
+forbidden_files:
+  # Sensitive files
+  secrets:
+    patterns:
+      - ".env"
+      - ".env.local"
+      - ".env.production"
+      - "*.secret"
+      - "*.key"
+      - "*.pem"
+      - "credentials.json"
+      - "secrets.yaml"
+    action: "block"
+    message: "Secrets must be managed externally, not by agents"
+
+  # System files
+  system:
+    patterns:
+      - ".git/**"
+      - ".github/workflows/**"
+      - "node_modules/**"
+      - "__pycache__/**"
+      - "*.pyc"
+      - ".venv/**"
+      - "venv/**"
+    action: "block"
+    message: "System files should not be modified by agents"
+
+  # IDE/Editor files
+  editor:
+    patterns:
+      - ".idea/**"
+      - ".vscode/**"
+      - "*.sublime-*"
+    action: "warn"
+    message: "Editor configuration should be managed manually"
+
+# === File Operations Logging ===
+
+logging:
+  enabled: true
+
+  # Log all file operations
+  operations:
+    - create
+    - modify
+    - delete
+    - rename
+    - move
+
+  # Log format
+  format:
+    timestamp: "ISO8601"
+    include_agent_id: true
+    include_checksum: true
+    include_size: true
+
+  # Log destination
+  destination:
+    type: "file"
+    path: "workspace/.logs/file-operations.jsonl"
+
+# === Workspace Structure ===
+# Standard directory structure for agent outputs.
+
+workspace_structure:
+  root: "workspace/"
+
+  directories:
+    spec:
+      path: "spec/"
+      description: "Requirements and specifications"
+      allowed_extensions:
+        - ".md"
+        - ".yaml"
+        - ".json"
+
+    api:
+      path: "api/"
+      description: "API contracts (OpenAPI, JSON Schema)"
+      allowed_extensions:
+        - ".yaml"
+        - ".json"
+
+    backend:
+      path: "backend/"
+      description: "Backend implementation"
+      subdirectories:
+        - "src/"
+        - "tests/"
+        - "config/"
+
+    frontend:
+      path: "frontend/"
+      description: "Frontend implementation"
+      subdirectories:
+        - "src/"
+        - "tests/"
+        - "public/"
+
+    reports:
+      path: "reports/"
+      description: "Review, test, and audit reports"
+      allowed_extensions:
+        - ".md"
+        - ".json"
+        - ".html"
+
+    integration:
+      path: "integration/"
+      description: "Integrated artifacts and release candidates"
+
+    context:
+      path: ".context/"
+      description: "Agent context and state (internal)"
+      hidden: true
+
+    logs:
+      path: ".logs/"
+      description: "Operation logs (internal)"
+      hidden: true
+
+# === Cleanup Rules ===
+# Automatic cleanup of temporary and unnecessary files.
+
+cleanup:
+  # Run cleanup after workflow completion
+  on_workflow_complete: true
+
+  # Patterns to clean up
+  patterns:
+    - "**/*.tmp"
+    - "**/._*"
+    - "**/.DS_Store"
+    - "**/Thumbs.db"
+    - "**/*.log"  # except in .logs/
+
+  # Exclude from cleanup
+  exclude:
+    - ".logs/**"
+    - ".context/**"
+
+# === Version Control Integration ===
+
+version_control:
+  # Don't auto-stage changes
+  auto_stage: false
+
+  # Commit granularity
+  commit_granularity: "logical_unit"
+
+  # Files to always ignore
+  gitignore_additions:
+    - ".context/"
+    - ".logs/"
+    - "*.tmp"
+    - "*.bak"
+    - "*.swp"
+    - "*~"
+
+  # Pre-commit checks
+  pre_commit:
+    check_forbidden_patterns: true
+    check_secrets: true
+    check_large_files: true
+    max_file_size_kb: 1024
+
+# === Permissions ===
+# File permission settings (Unix-style).
+
+permissions:
+  files:
+    default: "644"
+    executable: "755"
+
+  directories:
+    default: "755"
+
+  # Sensitive files should have restricted permissions
+  sensitive:
+    patterns:
+      - "*.key"
+      - "*.pem"
+    mode: "600"
