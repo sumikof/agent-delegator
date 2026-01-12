@@ -1,26 +1,66 @@
-[x] Review existing design document (agent-delegation.md) for completeness and gaps
-[x] Define Agent Interface schema (schemas/agent-interface.yaml)
-[x] Define Workflow schema (schemas/workflow-schema.yaml)
-[x] Implement ConfigLoader with methods: load_workflow, load_template, list_templates (orchestrator/config/loader.py)
-[x] Implement ConfigValidator using JSON Schema (orchestrator/config/validator.py)
-[x] Create CLI commands in orchestrator/cli.py: validate, show, list-templates, info, --version
-[x] Implement orchestrator skeleton (orchestrator/main.py) handling workflow execution and state management
-[x] Implement response schema JSON (response_schema.json) matching common response format
- [x] Draft detailed state machine documentation (plans/state_machine.md)
-[ ] Create additional workflow templates: mobile-app.yaml, infrastructure.yaml, data-pipeline.yaml (templates/)
-[ ] Implement core agents: orchestrator, client-liaison, planner, progress, integrator (orchestrator/agents/)
-[ ] Implement quality agents: requirements-auditor, quality-auditor, tester (orchestrator/agents/)
-[ ] Implement web-development agents: api-designer, backend-dev, frontend-dev, reviewer-be, reviewer-fe (orchestrator/agents/)
-[ ] Implement agent registry and loader (orchestrator/agents/registry.py, loader.py)
-[ ] Implement logging and context management (orchestrator/logging.py, context.py)
-[ ] Write unit tests for ConfigLoader, CLI commands, and orchestrator core logic (tests/unit/)
-[ ] Write integration tests covering full workflow execution (tests/integration/)
-[ ] Add usage examples and sample projects (examples/)
-[ ] Update agent-delegation.md with new sections: module architecture, CLI usage, templates, agent definitions
-[ ] Add Mermaid diagrams for module architecture and workflow execution in documentation
-[ ] Validate all schemas against example configurations and ensure compliance
-[ ] Set up CI/CD pipeline (ci-cd-engineer) with GitHub Actions for linting, testing, and release
-[ ] Update policy files (policies/file-policy.yaml, policies/language-policy.yaml) to reflect new constraints
-[ ] Add .github/workflows CI configuration files
-[ ] Run code linting and formatting tools across the codebase
-[ ] Prepare release notes and version bump
+[x] 設計ドキュメントの確認 (agent-delegation.md)
+[x] Agent Interface スキーマの定義 (schemas/agent-interface.yaml)
+[x] Workflow スキーマの定義 (schemas/workflow-schema.yaml)
+[x] ConfigLoader の実装 (orchestrator/config/loader.py)
+[x] ConfigValidator の実装 (orchestrator/config/validator.py)
+[x] CLI コマンドの作成 (orchestrator/cli.py)
+[x] Orchestrator 骨格の実装 (orchestrator/main.py)
+[x] 共通レスポンススキーマの実装 (response_schema.json)
+ [x] 状態遷移ドキュメントの作成 (plans/state_machine.md)
+[ ] ワークフローテンプレートの追加 (templates/)
+    - mobile-app.yaml: モバイルアプリ開発用のワークフロー定義
+    - infrastructure.yaml: インフラ構築用のワークフロー定義
+    - data-pipeline.yaml: データパイプライン用のワークフロー定義
+[ ] コアエージェントの実装 (orchestrator/agents/)
+    - orchestrator_agent.py: オーケストレーションを担当するエージェント
+    - client_liaison_agent.py: 顧客との連絡を担当するエージェント
+    - planner_agent.py: 計画を担当するエージェント
+    - progress_agent.py: 進捗管理を担当するエージェント
+    - integrator_agent.py: 統合を担当するエージェント
+[ ] 品質エージェントの実装 (orchestrator/agents/)
+    - requirements_auditor_agent.py: 要件監査を担当するエージェント
+    - quality_auditor_agent.py: 品質監査を担当するエージェント
+    - tester_agent.py: テストを担当するエージェント
+[ ] Web 開発エージェントの実装 (orchestrator/agents/)
+    - api_designer_agent.py: API設計を担当するエージェント
+    - backend_dev_agent.py: バックエンド開発を担当するエージェント
+    - frontend_dev_agent.py: フロントエンド開発を担当するエージェント
+    - reviewer_be_agent.py: バックエンドレビューを担当するエージェント
+    - reviewer_fe_agent.py: フロントエンドレビューを担当するエージェント
+[ ] エージェントレジストリとローダーの実装 (orchestrator/agents/)
+    - registry.py: エージェントの登録と管理を担当するモジュール
+    - loader.py: エージェントの読み込みとインスタンス化を担当するモジュール
+[ ] ロギングとコンテキスト管理の実装 (orchestrator/)
+    - logging.py: ロギング設定とログ出力を担当するモジュール
+    - context.py: コンテキスト管理を担当するモジュール
+[ ] ユニットテストの作成 (tests/unit/)
+    - ConfigLoader のテスト
+    - ConfigValidator のテスト
+    - CLI コマンドのテスト
+    - Orchestrator コアロジックのテスト
+[ ] 統合テストの作成 (tests/integration/)
+    - エンドツーエンドのワークフロー実行テスト
+[ ] 使用例とサンプルプロジェクトの追加 (examples/)
+    - 簡単なワークフローを使用したサンプルプロジェクト
+[ ] ドキュメントの更新 (agent-delegation.md)
+    - モジュール構成の説明
+    - CLI 使用ガイド
+    - テンプレートの説明
+    - エージェント定義の説明
+[ ] Mermaid 図の追加
+    - モジュール構成図
+    - ワークフロー実行図
+[ ] スキーマの検証
+    - 例の設定ファイルに対するスキーマの検証
+[ ] CI/CD パイプラインの設定
+    - GitHub Actions を使用した Lint とテストのワークフロー
+    - リリース自動化の設定
+[ ] ポリシーファイルの更新
+    - 新しい制約とファイルポリシーの反映
+[ ] CI/CD 設定ファイルの追加
+    - .github/workflows/ に CI/CD 設定ファイルを追加
+[ ] コードの整形と静的解析
+    - black と flake8 を使用したコードの整形と静的解析
+[ ] リリースノートの作成とバージョンアップ
+    - CHANGELOG の作成
+    - pyproject.toml のバージョン番号更新
