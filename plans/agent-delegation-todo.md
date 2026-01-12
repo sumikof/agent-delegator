@@ -30,7 +30,7 @@
 [x] エージェントレジストリとローダーの実装 (orchestrator/agents/)
     - registry.py: エージェントの登録と管理を担当するモジュール
     - loader.py: エージェントの読み込みとインスタンス化を担当するモジュール
-[ ] ロギングとコンテキスト管理の実装 (orchestrator/)
+[x] ロギングとコンテキスト管理の実装 (orchestrator/)
     - logging.py: ロギング設定とログ出力を担当するモジュール
     - context.py: コンテキスト管理を担当するモジュール
 [ ] ユニットテストの作成 (tests/unit/)
