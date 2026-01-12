@@ -17,11 +17,11 @@
     - planner_agent.py: 計画を担当するエージェント
     - progress_agent.py: 進捗管理を担当するエージェント
     - integrator_agent.py: 統合を担当するエージェント
-[ ] 品質エージェントの実装 (orchestrator/agents/)
+[x] 品質エージェントの実装 (orchestrator/agents/)
     - requirements_auditor_agent.py: 要件監査を担当するエージェント
     - quality_auditor_agent.py: 品質監査を担当するエージェント
     - tester_agent.py: テストを担当するエージェント
-[ ] Web 開発エージェントの実装 (orchestrator/agents/)
+[x] Web 開発エージェントの実装 (orchestrator/agents/)
     - api_designer_agent.py: API設計を担当するエージェント
     - backend_dev_agent.py: バックエンド開発を担当するエージェント
     - frontend_dev_agent.py: フロントエンド開発を担当するエージェント

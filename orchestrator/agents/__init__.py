@@ -20,6 +20,8 @@ from .backend_dev_agent import BackendDevAgent
 from .frontend_dev_agent import FrontendDevAgent
 from .reviewer_be_agent import ReviewerBEAgent
 from .reviewer_fe_agent import ReviewerFEAgent
+from .registry import AgentRegistry, registry
+from .loader import AgentLoader, loader
 
 __all__ = [
     "Agent",
@@ -36,5 +38,9 @@ __all__ = [
     "FrontendDevAgent",
     "ReviewerBEAgent",
     "ReviewerFEAgent",
+    "AgentRegistry",
+    "registry",
+    "AgentLoader",
+    "loader",
 ]
 
