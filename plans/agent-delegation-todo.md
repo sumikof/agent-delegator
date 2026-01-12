@@ -27,7 +27,7 @@
     - frontend_dev_agent.py: フロントエンド開発を担当するエージェント
     - reviewer_be_agent.py: バックエンドレビューを担当するエージェント
     - reviewer_fe_agent.py: フロントエンドレビューを担当するエージェント
-[ ] エージェントレジストリとローダーの実装 (orchestrator/agents/)
+[x] エージェントレジストリとローダーの実装 (orchestrator/agents/)
     - registry.py: エージェントの登録と管理を担当するモジュール
     - loader.py: エージェントの読み込みとインスタンス化を担当するモジュール
 [ ] ロギングとコンテキスト管理の実装 (orchestrator/)
