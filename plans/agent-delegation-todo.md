@@ -33,12 +33,12 @@
 [x] ロギングとコンテキスト管理の実装 (orchestrator/)
     - logging.py: ロギング設定とログ出力を担当するモジュール
     - context.py: コンテキスト管理を担当するモジュール
-[ ] ユニットテストの作成 (tests/unit/)
+[x] ユニットテストの作成 (tests/unit/)
     - ConfigLoader のテスト
     - ConfigValidator のテスト
     - CLI コマンドのテスト
     - Orchestrator コアロジックのテスト
-[ ] 統合テストの作成 (tests/integration/)
+[x] 統合テストの作成 (tests/integration/)
     - エンドツーエンドのワークフロー実行テスト
 [ ] 使用例とサンプルプロジェクトの追加 (examples/)
     - 簡単なワークフローを使用したサンプルプロジェクト
