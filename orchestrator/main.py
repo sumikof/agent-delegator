@@ -1,0 +1,112 @@
+"""Orchestrator entry point.
+
+This module provides a minimal skeleton for executing a workflow configuration.
+It loads a workflow file, validates it using the existing ``ConfigLoader`` and
+``ConfigValidator`` utilities, and then iterates over the defined stages.
+
+Each stage contains a list of agent IDs. The actual agent execution is out of
+scope for the initial skeleton – we simply log the intended execution order and
+return a summary response that conforms to the common response schema defined in
+``response_schema.json``.
+
+The implementation is deliberately lightweight to allow incremental development
+of concrete agent classes later in the project.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from typing import List
+
+from orchestrator.config.loader import ConfigLoader
+from orchestrator.config.validator import ConfigValidator
+from orchestrator.utils.constants import LOGGING_LEVEL
+
+# Simple logger – in a full implementation this would be replaced by a structured
+# logging system defined in ``orchestrator/logging.py``.
+def _log(message: str, *, level: str = "INFO") -> None:
+    if LOGGING_LEVEL == "DEBUG" or level != "DEBUG":
+        print(f"[{level}] {message}")
+
+
+def _load_and_validate(workflow_path: Path) -> "WorkflowConfig":
+    """Load a workflow file and validate it.
+
+    Returns the parsed ``WorkflowConfig`` model on success; exits the process on
+    validation failure.
+    """
+    loader = ConfigLoader()
+    validator = ConfigValidator()
+
+    # Load raw YAML for schema validation
+    raw_docs = loader._load_yaml_file(workflow_path)
+    workflow_dict = raw_docs[0] if isinstance(raw_docs, list) else raw_docs
+
+    is_valid, errors = validator.validate_workflow(workflow_dict)
+    if not is_valid:
+        _log("Workflow validation failed:", level="ERROR")
+        for err in errors:
+            _log(f"  - {err}", level="ERROR")
+        sys.exit(1)
+
+    # Pydantic validation (will raise ValidationError on failure)
+    try:
+        config = loader.load_workflow(workflow_path)
+    except Exception as exc:  # pragma: no cover – defensive
+        _log(f"Pydantic validation error: {exc}", level="ERROR")
+        sys.exit(1)
+
+    _log("Workflow configuration loaded and validated successfully")
+    return config
+
+
+def _execute_stage(stage_name: str, agents: List[str]) -> None:
+    """Placeholder for stage execution.
+
+    In a complete system each agent ID would be resolved to an implementation
+    class and its ``run`` method invoked. For now we simply log the intended
+    actions.
+    """
+    _log(f"Executing stage '{stage_name}' with agents: {', '.join(agents)}")
+    # TODO: Resolve agents and invoke their execution logic.
+
+
+def run(workflow_file: str) -> dict:
+    """Run the orchestrator against a workflow file.
+
+    Returns a JSON‑serialisable dictionary matching the common response schema.
+    """
+    workflow_path = Path(workflow_file)
+    config = _load_and_validate(workflow_path)
+
+    # Iterate over stages in order
+    for stage in config.workflow.stages:
+        _execute_stage(stage.name, stage.agents)
+
+    # Build a minimal success response
+    response = {
+        "status": "OK",
+        "summary": f"Workflow '{config.project.name}' executed successfully",
+        "findings": [],
+        "artifacts": [],
+        "next_actions": [],
+        "context": {},
+        "trace_id": "${{uuid4()}}",  # placeholder – real implementation would generate a UUID
+        "execution_time_ms": 0,
+    }
+    return response
+
+
+def main() -> None:
+    if len(sys.argv) != 2:
+        _log("Usage: python -m orchestrator.main <workflow.yaml>", level="ERROR")
+        sys.exit(1)
+    result = run(sys.argv[1])
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()
+

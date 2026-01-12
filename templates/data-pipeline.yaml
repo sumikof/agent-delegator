@@ -1,0 +1,35 @@
+version: "1.0"
+
+project:
+  name: "Data Pipeline Project"
+  type: data-pipeline
+  language_policy:
+    customer_facing: "ja"
+    development: "en"
+
+agents:
+  include_templates:
+    - core
+    - data-engineering
+  custom: []
+  exclude: []
+
+workflow:
+  stages:
+    - name: "Ingestion"
+      agents: ["etl-dev"]
+      execution_mode: sequential
+    - name: "Processing"
+      agents: ["ml-engineer"]
+      execution_mode: parallel
+    - name: "Validation"
+      agents: ["data-validator"]
+      execution_mode: sequential
+    - name: "Integration"
+      agents: ["integrator"]
+      execution_mode: sequential
+  error_handling:
+    retry_policy:
+      max_attempts: 3
+      backoff_type: exponential
+      initial_delay_ms: 1000

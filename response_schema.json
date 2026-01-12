@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhands.dev/schemas/response-schema.json",
+  "title": "Common Response Schema",
+  "description": "Standard response format for all agents",
+  "type": "object",
+  "required": ["status", "summary"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["OK", "NG"],
+      "description": "Execution status"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Brief summary of execution result"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "message"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["INFO", "WARN", "ERROR"]
+          },
+          "message": { "type": "string" },
+          "ref": { "type": "string" },
+          "suggestion": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "type"],
+        "properties": {
+          "path": { "type": "string" },
+          "type": { "type": "string", "enum": ["code", "spec", "doc", "config", "report"] },
+          "desc": { "type": "string" },
+          "checksum": { "type": "string" }
+        }
+      }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "trace_id": { "type": "string" },
+    "execution_time_ms": { "type": "integer" }
+  }
+}
+

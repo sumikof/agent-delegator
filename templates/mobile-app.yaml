@@ -1,0 +1,35 @@
+version: "1.0"
+
+project:
+  name: "Mobile App Project"
+  type: mobile
+  language_policy:
+    customer_facing: "ja"
+    development: "en"
+
+agents:
+  include_templates:
+    - core
+    - mobile-development
+  custom: []
+  exclude: []
+
+workflow:
+  stages:
+    - name: "Design"
+      agents: ["mobile-architect"]
+      execution_mode: sequential
+    - name: "Implementation"
+      agents: ["mobile-ios-dev", "mobile-android-dev"]
+      execution_mode: parallel
+    - name: "Review"
+      agents: ["mobile-reviewer"]
+      execution_mode: sequential
+    - name: "Integration"
+      agents: ["integrator"]
+      execution_mode: sequential
+  error_handling:
+    retry_policy:
+      max_attempts: 3
+      backoff_type: exponential
+      initial_delay_ms: 1000

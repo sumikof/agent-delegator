@@ -1,0 +1,35 @@
+version: "1.0"
+
+project:
+  name: "Infrastructure Project"
+  type: infrastructure
+  language_policy:
+    customer_facing: "ja"
+    development: "en"
+
+agents:
+  include_templates:
+    - core
+    - infrastructure
+  custom: []
+  exclude: []
+
+workflow:
+  stages:
+    - name: "Planning"
+      agents: ["infra-architect"]
+      execution_mode: sequential
+    - name: "Provisioning"
+      agents: ["terraform-dev", "k8s-dev"]
+      execution_mode: parallel
+    - name: "Security Review"
+      agents: ["security-auditor"]
+      execution_mode: sequential
+    - name: "Integration"
+      agents: ["integrator"]
+      execution_mode: sequential
+  error_handling:
+    retry_policy:
+      max_attempts: 3
+      backoff_type: exponential
+      initial_delay_ms: 1000
