@@ -11,7 +11,7 @@
     - mobile-app.yaml: モバイルアプリ開発用のワークフロー定義
     - infrastructure.yaml: インフラ構築用のワークフロー定義
     - data-pipeline.yaml: データパイプライン用のワークフロー定義
-[ ] コアエージェントの実装 (orchestrator/agents/)
+[x] コアエージェントの実装 (orchestrator/agents/)
     - orchestrator_agent.py: オーケストレーションを担当するエージェント
     - client_liaison_agent.py: 顧客との連絡を担当するエージェント
     - planner_agent.py: 計画を担当するエージェント
