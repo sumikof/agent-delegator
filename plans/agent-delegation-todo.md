@@ -7,7 +7,7 @@
 [x] Orchestrator 骨格の実装 (orchestrator/main.py)
 [x] 共通レスポンススキーマの実装 (response_schema.json)
  [x] 状態遷移ドキュメントの作成 (plans/state_machine.md)
-[ ] ワークフローテンプレートの追加 (templates/)
+[x] ワークフローテンプレートの追加 (templates/)
     - mobile-app.yaml: モバイルアプリ開発用のワークフロー定義
     - infrastructure.yaml: インフラ構築用のワークフロー定義
     - data-pipeline.yaml: データパイプライン用のワークフロー定義
