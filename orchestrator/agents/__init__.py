@@ -12,6 +12,9 @@ from .client_liaison_agent import ClientLiaisonAgent
 from .planner_agent import PlannerAgent
 from .progress_agent import ProgressAgent
 from .integrator_agent import IntegratorAgent
+from .requirements_auditor_agent import RequirementsAuditorAgent
+from .quality_auditor_agent import QualityAuditorAgent
+from .tester_agent import TesterAgent
 
 __all__ = [
     "Agent",
@@ -20,5 +23,8 @@ __all__ = [
     "PlannerAgent",
     "ProgressAgent",
     "IntegratorAgent",
+    "RequirementsAuditorAgent",
+    "QualityAuditorAgent",
+    "TesterAgent",
 ]
 
