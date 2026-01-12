@@ -15,6 +15,11 @@ from .integrator_agent import IntegratorAgent
 from .requirements_auditor_agent import RequirementsAuditorAgent
 from .quality_auditor_agent import QualityAuditorAgent
 from .tester_agent import TesterAgent
+from .api_designer_agent import APIDesignerAgent
+from .backend_dev_agent import BackendDevAgent
+from .frontend_dev_agent import FrontendDevAgent
+from .reviewer_be_agent import ReviewerBEAgent
+from .reviewer_fe_agent import ReviewerFEAgent
 
 __all__ = [
     "Agent",
@@ -26,5 +31,10 @@ __all__ = [
     "RequirementsAuditorAgent",
     "QualityAuditorAgent",
     "TesterAgent",
+    "APIDesignerAgent",
+    "BackendDevAgent",
+    "FrontendDevAgent",
+    "ReviewerBEAgent",
+    "ReviewerFEAgent",
 ]
 
