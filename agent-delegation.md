@@ -509,18 +509,197 @@ class ConfigLoader:
 
 ---
 
-## 15. 次に作成する成果物
+## 15. モジュール構成
+
+### 15.1 実装済みモジュール構成
+
+```
+orchestrator/
+├─ __init__.py
+├─ main.py               # メインオーケストレーター
+├─ cli.py                # CLIコマンドインターフェース
+├─ config/
+│   ├─ loader.py         # 設定ファイルローダー
+│   └─ validator.py      # 設定バリデーター
+├─ agents/
+│   ├─ base.py           # 基底エージェントクラス
+│   ├─ registry.py       # エージェントレジストリ
+│   ├─ loader.py         # エージェントローダー
+│   ├─ core/             # コアエージェント
+│   │   ├─ orchestrator_agent.py
+│   │   ├─ client_liaison_agent.py
+│   │   ├─ planner_agent.py
+│   │   ├─ progress_agent.py
+│   │   └─ integrator_agent.py
+│   ├─ quality/          # 品質エージェント
+│   │   ├─ requirements_auditor_agent.py
+│   │   ├─ quality_auditor_agent.py
+│   │   └─ tester_agent.py
+│   └─ web-development/  # Web開発エージェント
+│       ├─ api_designer_agent.py
+│       ├─ backend_dev_agent.py
+│       ├─ frontend_dev_agent.py
+│       ├─ reviewer_be_agent.py
+│       └─ reviewer_fe_agent.py
+├─ context.py            # コンテキスト管理
+├─ logging.py            # ロギング設定
+├─ utils/
+│   ├─ file_utils.py     # ファイル操作ユーティリティ
+│   ├─ validation.py     # バリデーションユーティリティ
+│   └─ state_machine.py  # 状態遷移管理
+└─ display/              # ディスプレイモジュール
+```
+
+### 15.2 モジュール責務
+
+| モジュール | 責務 |
+|----------|------|
+| `main.py` | オーケストレーションのメインロジック |
+| `cli.py` | CLIコマンドの定義と実行 |
+| `config/` | 設定ファイルの読み込みと検証 |
+| `agents/` | エージェントの定義と管理 |
+| `context.py` | コンテキストの管理と共有 |
+| `logging.py` | ロギングの設定と出力 |
+| `utils/` | ユーティリティ関数 |
+
+## 16. CLI使用ガイド
+
+### 16.1 基本コマンド
+
+```bash
+# ワークフローの実行
+python -m orchestrator.cli run --config workflow.yaml
+
+# 設定の検証
+python -m orchestrator.cli validate --config workflow.yaml
+
+# エージェント一覧の表示
+python -m orchestrator.cli list-agents
+
+# ヘルプの表示
+python -m orchestrator.cli --help
+```
+
+### 16.2 オプション
+
+| オプション | 説明 | デフォルト |
+|----------|------|----------|
+| `--config` | ワークフローファイルのパス | `workflow.yaml` |
+| `--workdir` | 作業ディレクトリ | `./workspace` |
+| `--log-level` | ログレベル | `INFO` |
+| `--dry-run` | ドライランモード | `False` |
+| `--debug` | デバッグモード | `False` |
+
+### 16.3 使用例
+
+```bash
+# 簡単なワークフローの実行
+python -m orchestrator.cli run --config examples/simple-web-app/workflow.yaml
+
+# デバッグモードで実行
+python -m orchestrator.cli run --config workflow.yaml --debug --log-level DEBUG
+
+# カスタム作業ディレクトリで実行
+python -m orchestrator.cli run --config workflow.yaml --workdir ./my-workspace
+```
+
+## 17. テンプレート
+
+### 17.1 利用可能なテンプレート
+
+| テンプレート | パス | 用途 |
+|--------------|------|------|
+| Webフルスタック | `templates/web-fullstack.yaml` | Webアプリケーション開発 |
+| モバイルアプリ | `templates/mobile-app.yaml` | モバイルアプリ開発 |
+| インフラ構築 | `templates/infrastructure.yaml` | インフラ構築 |
+| データパイプライン | `templates/data-pipeline.yaml` | データパイプライン |
+
+### 17.2 テンプレートの使用方法
+
+```yaml
+# workflow.yaml内でテンプレートをインクルード
+agents:
+  include_templates:
+    - core
+    - quality
+    - web-development
+```
+
+### 17.3 カスタムテンプレートの作成
+
+1. `templates/` ディレクトリに新しいYAMLファイルを作成
+2. 必要なエージェントとワークフローを定義
+3. ワークフロー設定でインクルード
+
+## 18. エージェント定義
+
+### 18.1 コアエージェント
+
+| エージェント | ID | 責務 |
+|--------------|----|------|
+| オーケストレーター | orchestrator | 全体のオーケストレーション |
+| クライアント連絡 | client-liaison | 顧客との連絡 |
+| プランナー | planner | 計画の作成 |
+| 進捗管理 | progress | 進捗の管理 |
+| 統合 | integrator | 成果物の統合 |
+
+### 18.2 品質エージェント
+
+| エージェント | ID | 責務 |
+|--------------|----|------|
+| 要件監査 | requirements-auditor | 要件の監査 |
+| 品質監査 | quality-auditor | 品質の監査 |
+| テスター | tester | テストの実施 |
+
+### 18.3 Web開発エージェント
+
+| エージェント | ID | 責務 |
+|--------------|----|------|
+| API設計 | api-designer | API設計 |
+| バックエンド開発 | backend-dev | バックエンド開発 |
+| フロントエンド開発 | frontend-dev | フロントエンド開発 |
+| バックエンドレビュー | reviewer-be | バックエンドコードレビュー |
+| フロントエンドレビュー | reviewer-fe | フロントエンドコードレビュー |
+
+## 19. 使用例
+
+### 19.1 簡単なWebアプリケーション
+
+`examples/simple-web-app/` ディレクトリに簡単なWebアプリケーションの例があります。
+
+```bash
+cd examples/simple-web-app
+python -m orchestrator.cli run --config workflow.yaml
+```
+
+### 19.2 カスタムワークフロー
+
+1. 新しいワークフローファイルを作成
+2. 必要なエージェントを定義
+3. タスクと依存関係を設定
+4. CLIで実行
+
+## 20. Mermaid 図
+
+### 20.1 モジュール構成図
+
+モジュール構成の詳細な図は [mermaid/module_structure.md](mermaid/module_structure.md) を参照。
+
+### 20.2 ワークフロー実行図
+
+ワークフロー実行の詳細な図は [mermaid/workflow_execution.md](mermaid/workflow_execution.md) を参照。
+
+## 21. 次に作成する成果物
 
 ### 優先度：高
-- [ ] `orchestrator_skeleton.py` - 親エージェントの雛形実装
-- [ ] `response_schema.json` - 共通レスポンススキーマ（JSON Schema）
-- [ ] `state_machine.md` - 状態遷移定義の詳細
+- [ ] `examples/` - 追加の使用例
+- [ ] `tests/` - 統合テスト
 
 ### 優先度：中
-- [ ] `templates/mobile-app.yaml` - モバイルアプリ開発テンプレート
-- [ ] `templates/infrastructure.yaml` - インフラ構築テンプレート
-- [ ] `agents/` - 各エージェントの詳細定義
+- [ ] スキーマの検証
+- [ ] CI/CDパイプラインの設定
 
 ### 優先度：低
-- [ ] `examples/` - 使用例
-- [ ] `tests/` - テストケース
+- [ ] ポリシーファイルの更新
+- [ ] コードの整形と静的解析
+- [ ] リリースノートの作成

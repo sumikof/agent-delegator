@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 import yaml
 import jsonschema
-from jsonschema import ValidationError, SchemaError
+from jsonschema import SchemaError
 
 from orchestrator.utils.constants import (
     WORKFLOW_SCHEMA_PATH,
@@ -51,9 +51,7 @@ class ConfigValidator:
         return self._validate_against_schema(config, schema)
 
     def validate_against_schema(
-        self,
-        data: dict[str, Any],
-        schema_path: str | Path
+        self, data: dict[str, Any], schema_path: str | Path
     ) -> tuple[bool, list[str]]:
         """
         Generic validation against a JSON Schema file.
@@ -73,7 +71,7 @@ class ConfigValidator:
             raise FileNotFoundError(f"Schema file not found: {schema_path}")
 
         # Load schema from YAML file
-        with open(schema_path, 'r', encoding='utf-8') as f:
+        with open(schema_path, "r", encoding="utf-8") as f:
             docs = list(yaml.safe_load_all(f))
 
         # First document is the schema
@@ -82,9 +80,7 @@ class ConfigValidator:
         return self._validate_against_schema(data, schema)
 
     def _validate_against_schema(
-        self,
-        data: dict[str, Any],
-        schema: dict[str, Any]
+        self, data: dict[str, Any], schema: dict[str, Any]
     ) -> tuple[bool, list[str]]:
         """
         Validate data against a JSON schema.
@@ -137,11 +133,9 @@ class ConfigValidator:
             return self._workflow_schema_cache
 
         if not WORKFLOW_SCHEMA_PATH.exists():
-            raise FileNotFoundError(
-                f"Workflow schema not found: {WORKFLOW_SCHEMA_PATH}"
-            )
+            raise FileNotFoundError(f"Workflow schema not found: {WORKFLOW_SCHEMA_PATH}")
 
-        with open(WORKFLOW_SCHEMA_PATH, 'r', encoding='utf-8') as f:
+        with open(WORKFLOW_SCHEMA_PATH, "r", encoding="utf-8") as f:
             docs = list(yaml.safe_load_all(f))
 
         # First document is the schema
@@ -166,7 +160,7 @@ class ConfigValidator:
                 f"Agent interface schema not found: {AGENT_INTERFACE_SCHEMA_PATH}"
             )
 
-        with open(AGENT_INTERFACE_SCHEMA_PATH, 'r', encoding='utf-8') as f:
+        with open(AGENT_INTERFACE_SCHEMA_PATH, "r", encoding="utf-8") as f:
             docs = list(yaml.safe_load_all(f))
 
         # First document is the schema
@@ -175,6 +169,7 @@ class ConfigValidator:
 
 
 # Convenience functions
+
 
 def validate_workflow(config: dict[str, Any]) -> tuple[bool, list[str]]:
     """

@@ -32,4 +32,3 @@ class OrchestratorAgent(Agent):
             "trace_id": "placeholder-trace-id",
             "execution_time_ms": 0,
         }
-

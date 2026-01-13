@@ -32,4 +32,3 @@ class Agent:
             A dictionary matching the common response schema.
         """
         raise NotImplementedError("Agent subclasses must implement the run method")
-

@@ -12,7 +12,6 @@ from orchestrator.config.models import WorkflowConfig, AgentConfig
 from orchestrator.utils.constants import (
     TEMPLATES_DIR,
     AGENT_INTERFACE_SCHEMA_PATH,
-    AgentTemplateCategory,
 )
 
 
@@ -51,16 +50,13 @@ class ConfigLoader:
         # Second document (if exists) contains agent configurations
         agents_config = {}
         if isinstance(docs, list) and len(docs) > 1:
-            agents_config = docs[1].get('agents_config', {})
+            agents_config = docs[1].get("agents_config", {})
 
         # Resolve agent templates if needed
-        if 'agents' in workflow_dict and 'include_templates' in workflow_dict['agents']:
-            template_names = workflow_dict['agents']['include_templates']
-            resolved_agents = self._resolve_agent_templates(
-                template_names,
-                agents_config
-            )
-            # Store resolved agents for potential use
+        if "agents" in workflow_dict and "include_templates" in workflow_dict["agents"]:
+            template_names = workflow_dict["agents"]["include_templates"]
+            self._resolve_agent_templates(template_names, agents_config)
+            # Resolve agent templates for potential use
             # (Note: in full implementation, these would be registered)
 
         # Parse into Pydantic model (validates structure)
@@ -115,7 +111,7 @@ class ConfigLoader:
         Raises:
             yaml.YAMLError: If YAML is invalid
         """
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             docs = list(yaml.safe_load_all(f))
 
         # Filter out None documents (trailing --- can create empty documents)
@@ -129,9 +125,7 @@ class ConfigLoader:
             return docs
 
     def _resolve_agent_templates(
-        self,
-        template_names: list[str],
-        agents_config: dict[str, dict]
+        self, template_names: list[str], agents_config: dict[str, dict]
     ) -> dict[str, AgentConfig]:
         """
         Resolve agent template names to agent configurations.
@@ -167,8 +161,8 @@ class ConfigLoader:
 
             agent_dict = agents_config[agent_id]
             # Ensure 'id' field is set
-            if 'id' not in agent_dict:
-                agent_dict['id'] = agent_id
+            if "id" not in agent_dict:
+                agent_dict["id"] = agent_id
 
             try:
                 resolved_agents[agent_id] = AgentConfig(**agent_dict)
@@ -198,33 +192,26 @@ class ConfigLoader:
         if isinstance(docs, list):
             # Find the document with 'templates' key
             for doc in docs:
-                if 'templates' in doc:
-                    templates = doc['templates']
+                if "templates" in doc:
+                    templates = doc["templates"]
                     break
             else:
-                raise ValueError(
-                    "No 'templates' section found in agent-interface.yaml"
-                )
+                raise ValueError("No 'templates' section found in agent-interface.yaml")
         else:
-            if 'templates' not in docs:
-                raise ValueError(
-                    "No 'templates' section found in agent-interface.yaml"
-                )
-            templates = docs['templates']
+            if "templates" not in docs:
+                raise ValueError("No 'templates' section found in agent-interface.yaml")
+            templates = docs["templates"]
 
         # Extract agent IDs from each template
         mappings = {}
         for template_name, template_config in templates.items():
-            if 'agents' in template_config:
-                mappings[template_name] = template_config['agents']
+            if "agents" in template_config:
+                mappings[template_name] = template_config["agents"]
 
         return mappings
 
     def _merge_agent_configs(
-        self,
-        template_agents: dict[str, AgentConfig],
-        custom_agents: list[dict],
-        exclude: list[str]
+        self, template_agents: dict[str, AgentConfig], custom_agents: list[dict], exclude: list[str]
     ) -> dict[str, AgentConfig]:
         """
         Merge template agents with custom agents, applying exclusions.
@@ -249,21 +236,20 @@ class ConfigLoader:
 
         # Add custom agents (may override template agents)
         for custom_agent_dict in custom_agents:
-            agent_id = custom_agent_dict.get('id')
+            agent_id = custom_agent_dict.get("id")
             if not agent_id:
                 raise ValueError("Custom agent missing 'id' field")
 
             try:
                 merged[agent_id] = AgentConfig(**custom_agent_dict)
             except Exception as e:
-                raise ValueError(
-                    f"Invalid custom agent configuration for '{agent_id}': {e}"
-                )
+                raise ValueError(f"Invalid custom agent configuration for '{agent_id}': {e}")
 
         return merged
 
 
 # Convenience functions
+
 
 def load_workflow(path: str | Path) -> WorkflowConfig:
     """

@@ -101,7 +101,6 @@ forbidden_files:
   system:
     patterns:
       - ".git/**"
-      - ".github/workflows/**"
       - "node_modules/**"
       - "__pycache__/**"
       - "*.pyc"
@@ -109,6 +108,17 @@ forbidden_files:
       - "venv/**"
     action: "block"
     message: "System files should not be modified by agents"
+
+  # CI/CD files - allow modification only by specific agents
+  ci_cd:
+    patterns:
+      - ".github/workflows/**"
+      - ".github/**"
+    action: "restricted"
+    allowed_agents:
+      - "orchestrator"
+      - "ci-cd-engineer"
+    message: "CI/CD files can only be modified by authorized agents"
 
   # IDE/Editor files
   editor:
@@ -118,6 +128,18 @@ forbidden_files:
       - "*.sublime-*"
     action: "warn"
     message: "Editor configuration should be managed manually"
+
+  # Example files - allow modification by example agents
+  examples:
+    patterns:
+      - "examples/**"
+      - "examples/**/*"
+    action: "allow"
+    allowed_agents:
+      - "orchestrator"
+      - "example-creator"
+      - "documentation-agent"
+    message: "Example files can be modified by authorized agents for documentation purposes"
 
 # === File Operations Logging ===
 

@@ -29,8 +29,8 @@ def main(ctx):
 
 
 @main.command()
-@click.argument('workflow_file', type=click.Path(exists=True))
-@click.option('--verbose', '-v', is_flag=True, help='Show detailed validation output')
+@click.argument("workflow_file", type=click.Path(exists=True))
+@click.option("--verbose", "-v", is_flag=True, help="Show detailed validation output")
 def validate(workflow_file: str, verbose: bool):
     """
     Validate a workflow configuration file.
@@ -56,13 +56,13 @@ def validate(workflow_file: str, verbose: bool):
         is_valid, errors = validator.validate_workflow(workflow_dict)
 
         if not is_valid:
-            click.secho("✗ JSON Schema validation failed:", fg='red', bold=True)
+            click.secho("✗ JSON Schema validation failed:", fg="red", bold=True)
             for error in errors:
                 click.echo(f"  - {error}")
             sys.exit(1)
 
         if verbose:
-            click.secho("✓ JSON Schema validation passed", fg='green')
+            click.secho("✓ JSON Schema validation passed", fg="green")
 
         # Pydantic model validation
         if verbose:
@@ -71,23 +71,24 @@ def validate(workflow_file: str, verbose: bool):
         try:
             config = loader.load_workflow(workflow_path)
         except ValidationError as e:
-            click.secho("✗ Pydantic validation failed:", fg='red', bold=True)
+            click.secho("✗ Pydantic validation failed:", fg="red", bold=True)
             if verbose:
                 click.echo(str(e))
             else:
                 for error in e.errors():
-                    loc = " -> ".join(str(l) for l in error['loc'])
+                    loc = " -> ".join(str(loc_part) for loc_part in error["loc"])
                     click.echo(f"  - [{loc}] {error['msg']}")
             sys.exit(1)
         except Exception as e:
-            click.secho(f"✗ Validation failed: {e}", fg='red', bold=True)
+            click.secho(f"✗ Validation failed: {e}", fg="red", bold=True)
             if verbose:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
 
         # Success
-        click.secho("✓ Configuration is valid", fg='green', bold=True)
+        click.secho("✓ Configuration is valid", fg="green", bold=True)
 
         if verbose:
             click.echo(f"\nWorkflow: {config.project.name}")
@@ -95,21 +96,23 @@ def validate(workflow_file: str, verbose: bool):
             click.echo(f"Stages: {len(config.workflow.stages)}")
 
     except FileNotFoundError as e:
-        click.secho(f"✗ Error: {e}", fg='red', bold=True)
+        click.secho(f"✗ Error: {e}", fg="red", bold=True)
         sys.exit(1)
     except Exception as e:
-        click.secho(f"✗ Unexpected error: {e}", fg='red', bold=True)
+        click.secho(f"✗ Unexpected error: {e}", fg="red", bold=True)
         if verbose:
             import traceback
+
             traceback.print_exc()
         sys.exit(1)
 
 
 @main.command()
-@click.argument('workflow_file', type=click.Path(exists=True))
-@click.option('--format', '-f', type=click.Choice(['text', 'json']), default='text',
-              help='Output format')
-@click.option('--no-color', is_flag=True, help='Disable colored output')
+@click.argument("workflow_file", type=click.Path(exists=True))
+@click.option(
+    "--format", "-f", type=click.Choice(["text", "json"]), default="text", help="Output format"
+)
+@click.option("--no-color", is_flag=True, help="Disable colored output")
 def show(workflow_file: str, format: str, no_color: bool):
     """
     Display workflow configuration details.
@@ -120,9 +123,9 @@ def show(workflow_file: str, format: str, no_color: bool):
         loader = ConfigLoader()
         config = loader.load_workflow(workflow_file)
 
-        if format == 'json':
+        if format == "json":
             # Output as JSON
-            output = config.model_dump(mode='json')
+            output = config.model_dump(mode="json")
             click.echo(json.dumps(output, indent=2))
         else:
             # Output as formatted text
@@ -131,20 +134,20 @@ def show(workflow_file: str, format: str, no_color: bool):
             click.echo(output)
 
     except FileNotFoundError as e:
-        click.secho(f"✗ Error: {e}", fg='red', bold=True)
+        click.secho(f"✗ Error: {e}", fg="red", bold=True)
         sys.exit(1)
     except ValidationError as e:
-        click.secho("✗ Invalid configuration:", fg='red', bold=True)
+        click.secho("✗ Invalid configuration:", fg="red", bold=True)
         for error in e.errors():
-            loc = " -> ".join(str(l) for l in error['loc'])
+            loc = " -> ".join(str(loc_part) for loc_part in error["loc"])
             click.echo(f"  - [{loc}] {error['msg']}")
         sys.exit(1)
     except Exception as e:
-        click.secho(f"✗ Error: {e}", fg='red', bold=True)
+        click.secho(f"✗ Error: {e}", fg="red", bold=True)
         sys.exit(1)
 
 
-@main.command(name='list-templates')
+@main.command(name="list-templates")
 def list_templates():
     """
     List all available workflow templates.
@@ -167,27 +170,28 @@ def list_templates():
                 description = config.project.description or "No description"
                 type_str = config.project.type.value
 
-                click.secho(f"  {template_name}", fg='cyan', bold=True)
+                click.secho(f"  {template_name}", fg="cyan", bold=True)
                 click.echo(f"    Type: {type_str}")
                 click.echo(f"    Description: {description}")
                 click.echo(f"    Stages: {len(config.workflow.stages)}")
                 click.echo()
 
             except Exception as e:
-                click.secho(f"  {template_name}", fg='cyan', bold=True)
-                click.secho(f"    Error loading template: {e}", fg='red')
+                click.secho(f"  {template_name}", fg="cyan", bold=True)
+                click.secho(f"    Error loading template: {e}", fg="red")
                 click.echo()
 
     except Exception as e:
-        click.secho(f"✗ Error: {e}", fg='red', bold=True)
+        click.secho(f"✗ Error: {e}", fg="red", bold=True)
         sys.exit(1)
 
 
 @main.command()
-@click.argument('template_name')
-@click.option('--format', '-f', type=click.Choice(['text', 'json']), default='text',
-              help='Output format')
-@click.option('--no-color', is_flag=True, help='Disable colored output')
+@click.argument("template_name")
+@click.option(
+    "--format", "-f", type=click.Choice(["text", "json"]), default="text", help="Output format"
+)
+@click.option("--no-color", is_flag=True, help="Disable colored output")
 def info(template_name: str, format: str, no_color: bool):
     """
     Show detailed information about a template.
@@ -198,9 +202,9 @@ def info(template_name: str, format: str, no_color: bool):
         loader = ConfigLoader()
         config = loader.load_template(template_name)
 
-        if format == 'json':
+        if format == "json":
             # Output as JSON
-            output = config.model_dump(mode='json')
+            output = config.model_dump(mode="json")
             click.echo(json.dumps(output, indent=2))
         else:
             # Output as formatted text
@@ -209,7 +213,7 @@ def info(template_name: str, format: str, no_color: bool):
             click.echo(output)
 
     except FileNotFoundError:
-        click.secho(f"✗ Template not found: {template_name}", fg='red', bold=True)
+        click.secho(f"✗ Template not found: {template_name}", fg="red", bold=True)
         click.echo("\nAvailable templates:")
         loader = ConfigLoader()
         templates = loader.list_templates()
@@ -217,9 +221,9 @@ def info(template_name: str, format: str, no_color: bool):
             click.echo(f"  - {t}")
         sys.exit(1)
     except Exception as e:
-        click.secho(f"✗ Error: {e}", fg='red', bold=True)
+        click.secho(f"✗ Error: {e}", fg="red", bold=True)
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

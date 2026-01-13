@@ -15,6 +15,7 @@ from orchestrator.config.models import (
 # ANSI color codes
 class Colors:
     """ANSI color codes for terminal output."""
+
     RESET = "\033[0m"
     BOLD = "\033[1m"
     GREEN = "\033[92m"
@@ -68,7 +69,11 @@ class WorkflowFormatter:
 
         # Global timeout
         timeout_hours = config.workflow.global_timeout_ms / 3600000
-        timeout_str = f"{timeout_hours:.1f} hours" if timeout_hours >= 1 else f"{config.workflow.global_timeout_ms / 60000:.0f} minutes"
+        timeout_str = (
+            f"{timeout_hours:.1f} hours"
+            if timeout_hours >= 1
+            else f"{config.workflow.global_timeout_ms / 60000:.0f} minutes"
+        )
         sections.append(f"\n{self._bold('Global Timeout:')} {timeout_str}")
 
         return "\n".join(sections)
@@ -94,7 +99,9 @@ class WorkflowFormatter:
 
         if project.language_policy:
             lp = project.language_policy
-            lines.append(f"  {self._label('Language Policy:')} Customer-facing ({lp.customer_facing}), Development ({lp.development})")
+            lines.append(
+                f"  {self._label('Language Policy:')} Customer-facing ({lp.customer_facing}), Development ({lp.development})"
+            )
 
         return "\n".join(lines)
 
@@ -249,6 +256,7 @@ class WorkflowFormatter:
 
 
 # Convenience functions
+
 
 def format_workflow(config: WorkflowConfig, use_colors: bool = True) -> str:
     """

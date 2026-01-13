@@ -26,8 +26,10 @@ FILE_POLICY_PATH = POLICIES_DIR / "file-policy.yaml"
 
 # ===== Enumerations =====
 
+
 class ProjectType(str, Enum):
     """Project type enumeration."""
+
     WEB = "web"
     MOBILE = "mobile"
     INFRASTRUCTURE = "infrastructure"
@@ -38,12 +40,14 @@ class ProjectType(str, Enum):
 
 class ExecutionMode(str, Enum):
     """Stage execution mode."""
+
     SEQUENTIAL = "sequential"
     PARALLEL = "parallel"
 
 
 class AgentRole(str, Enum):
     """Agent role categories."""
+
     LIAISON = "liaison"
     PLANNING = "planning"
     AUDIT = "audit"
@@ -56,18 +60,21 @@ class AgentRole(str, Enum):
 
 class Status(str, Enum):
     """Agent execution status."""
+
     OK = "OK"
     NG = "NG"
 
 
 class RequiredStatus(str, Enum):
     """Gate required status."""
+
     OK = "OK"
     OK_WITH_WARNINGS = "OK_WITH_WARNINGS"
 
 
 class Severity(str, Enum):
     """Finding severity levels."""
+
     INFO = "INFO"
     WARN = "WARN"
     ERROR = "ERROR"
@@ -75,6 +82,7 @@ class Severity(str, Enum):
 
 class ArtifactType(str, Enum):
     """Artifact type categories."""
+
     CODE = "code"
     SPEC = "spec"
     DOC = "doc"
@@ -84,6 +92,7 @@ class ArtifactType(str, Enum):
 
 class BackoffType(str, Enum):
     """Retry backoff strategy."""
+
     CONSTANT = "constant"
     LINEAR = "linear"
     EXPONENTIAL = "exponential"
@@ -91,6 +100,7 @@ class BackoffType(str, Enum):
 
 class OnFailureAction(str, Enum):
     """Action to take on stage failure."""
+
     ABORT = "abort"
     RETRY = "retry"
     FALLBACK = "fallback"
@@ -99,6 +109,7 @@ class OnFailureAction(str, Enum):
 
 class FallbackCondition(str, Enum):
     """Fallback trigger conditions."""
+
     MAX_RETRIES_EXCEEDED = "max_retries_exceeded"
     CIRCUIT_OPEN = "circuit_open"
     TIMEOUT = "timeout"
@@ -107,6 +118,7 @@ class FallbackCondition(str, Enum):
 
 class FallbackAction(str, Enum):
     """Fallback actions."""
+
     DELEGATE_TO_HUMAN = "delegate_to_human"
     USE_CACHED_RESULT = "use_cached_result"
     ESCALATE_TO_ORCHESTRATOR = "escalate_to_orchestrator"
@@ -116,6 +128,7 @@ class FallbackAction(str, Enum):
 
 class AgentTemplateCategory(str, Enum):
     """Built-in agent template categories."""
+
     CORE = "core"
     QUALITY = "quality"
     WEB_DEVELOPMENT = "web-development"

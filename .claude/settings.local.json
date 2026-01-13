@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:docs.openhands.dev)",
+      "Bash(. .venv/bin/activate)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(pip install:*)",
+      "Bash(python -m orchestrator.cli:*)",
+      "Bash(chmod:*)",
+      "Bash(./agent-delegate:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)"
+    ]
+  }
+}
