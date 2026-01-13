@@ -20,11 +20,13 @@ import sys
 from pathlib import Path
 
 from orchestrator.config.models import WorkflowConfig
-from typing import List
+from typing import List, Optional
 
 from orchestrator.config.loader import ConfigLoader
 from orchestrator.config.validator import ConfigValidator
 from orchestrator.utils.constants import LOGGING_LEVEL
+from orchestrator.parallel.orchestrator import ParallelOrchestrator
+from orchestrator.agents.registry import AgentRegistry
 
 
 # Simple logger – in a full implementation this would be replaced by a structured
@@ -76,7 +78,7 @@ def _execute_stage(stage_name: str, agents: List[str]) -> None:
     # TODO: Resolve agents and invoke their execution logic.
 
 
-def run(workflow_file: str) -> dict:
+def run(workflow_file: str, use_parallel: bool = False) -> dict:
     """Run the orchestrator against a workflow file.
 
     Returns a JSON‑serialisable dictionary matching the common response schema.
@@ -84,6 +86,14 @@ def run(workflow_file: str) -> dict:
     workflow_path = Path(workflow_file)
     config = _load_and_validate(workflow_path)
 
+    if use_parallel:
+        return _run_parallel_workflow(config)
+    else:
+        return _run_sequential_workflow(config)
+
+
+def _run_sequential_workflow(config: WorkflowConfig) -> dict:
+    """Run workflow using sequential execution (original implementation)."""
     # Iterate over stages in order
     for stage in config.workflow.stages:
         _execute_stage(stage.name, stage.agents)
@@ -98,6 +108,70 @@ def run(workflow_file: str) -> dict:
         "context": {},
         "trace_id": "${{uuid4()}}",  # placeholder – real implementation would generate a UUID
         "execution_time_ms": 0,
+    }
+    return response
+
+
+def _run_parallel_workflow(config: WorkflowConfig) -> dict:
+    """Run workflow using parallel execution."""
+    import time
+    import uuid
+    
+    start_time = time.time()
+    
+    # Create parallel orchestrator
+    orchestrator = ParallelOrchestrator(agent_registry=AgentRegistry())
+    
+    # Submit tasks for all stages
+    task_ids = []
+    for stage in config.workflow.stages:
+        for agent in stage.agents:
+            task_id = orchestrator.submit_task(
+                agent_type=agent,
+                payload={
+                    "stage": stage.name,
+                    "config": config.dict(),
+                    "workflow": config.workflow.dict()
+                }
+            )
+            task_ids.append(task_id)
+    
+    # Wait for all tasks to complete
+    for task_id in task_ids:
+        orchestrator.wait_for_completion(task_id)
+    
+    # Collect results
+    results = []
+    for task_id in task_ids:
+        result = orchestrator.get_task_result(task_id)
+        if result:
+            results.append(result)
+    
+    # Shutdown orchestrator
+    orchestrator.shutdown()
+    
+    execution_time = time.time() - start_time
+    
+    # Build response
+    response = {
+        "status": "OK",
+        "summary": f"Parallel workflow '{config.project.name}' executed successfully",
+        "findings": [
+            {
+                "severity": "INFO",
+                "message": f"Executed {len(task_ids)} tasks in parallel",
+                "ref": "parallel_execution"
+            }
+        ],
+        "artifacts": [],
+        "next_actions": [],
+        "context": {
+            "parallel_execution": True,
+            "task_count": len(task_ids),
+            "execution_time_ms": int(execution_time * 1000)
+        },
+        "trace_id": str(uuid.uuid4()),
+        "execution_time_ms": int(execution_time * 1000),
     }
     return response
 

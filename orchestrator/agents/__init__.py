@@ -23,6 +23,21 @@ from .reviewer_fe_agent import ReviewerFEAgent
 from .registry import AgentRegistry, registry
 from .loader import AgentLoader, loader
 
+# Register all agents with the global registry
+registry.register("orchestrator", OrchestratorAgent)
+registry.register("client_liaison", ClientLiaisonAgent)
+registry.register("planner", PlannerAgent)
+registry.register("progress", ProgressAgent)
+registry.register("integrator", IntegratorAgent)
+registry.register("requirements_auditor", RequirementsAuditorAgent)
+registry.register("quality_auditor", QualityAuditorAgent)
+registry.register("tester", TesterAgent)
+registry.register("api_designer", APIDesignerAgent)
+registry.register("backend_dev", BackendDevAgent)
+registry.register("frontend_dev", FrontendDevAgent)
+registry.register("reviewer_be", ReviewerBEAgent)
+registry.register("reviewer_fe", ReviewerFEAgent)
+
 __all__ = [
     "Agent",
     "OrchestratorAgent",

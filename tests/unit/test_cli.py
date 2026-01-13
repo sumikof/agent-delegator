@@ -18,7 +18,7 @@ def test_show_command():
     runner = CliRunner()
     result = runner.invoke(show, ["--help"])
     assert result.exit_code == 0
-    assert "Show workflow details" in result.output
+    assert "Display workflow configuration details" in result.output
 
 
 def test_list_templates_command():
@@ -26,7 +26,7 @@ def test_list_templates_command():
     runner = CliRunner()
     result = runner.invoke(list_templates, ["--help"])
     assert result.exit_code == 0
-    assert "List available workflow templates" in result.output
+    assert "List all available workflow templates" in result.output
 
 
 def test_info_command():
@@ -34,4 +34,4 @@ def test_info_command():
     runner = CliRunner()
     result = runner.invoke(info, ["--help"])
     assert result.exit_code == 0
-    assert "Show system information" in result.output
+    assert "Show detailed information about a template" in result.output

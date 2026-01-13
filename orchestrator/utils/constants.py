@@ -140,6 +140,9 @@ class AgentTemplateCategory(str, Enum):
 
 # ===== Default Values =====
 
+# Logging level
+LOGGING_LEVEL = "INFO"
+
 # Timeout defaults (milliseconds)
 DEFAULT_AGENT_TIMEOUT_MS = 300000  # 5 minutes
 DEFAULT_STAGE_TIMEOUT_MS = 600000  # 10 minutes

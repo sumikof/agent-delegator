@@ -14,6 +14,7 @@ from orchestrator import __version__
 from orchestrator.config.loader import ConfigLoader
 from orchestrator.config.validator import ConfigValidator
 from orchestrator.display.formatter import WorkflowFormatter
+from orchestrator.main import run as run_workflow
 
 
 @click.group()
@@ -222,6 +223,56 @@ def info(template_name: str, format: str, no_color: bool):
         sys.exit(1)
     except Exception as e:
         click.secho(f"✗ Error: {e}", fg="red", bold=True)
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("workflow_file", type=click.Path(exists=True))
+@click.option("--parallel", "-p", is_flag=True, help="Execute workflow using parallel processing")
+@click.option("--verbose", "-v", is_flag=True, help="Show detailed execution output")
+def run(workflow_file: str, parallel: bool, verbose: bool):
+    """
+    Execute a workflow configuration.
+
+    WORKFLOW_FILE: Path to the workflow YAML file
+    """
+    try:
+        if verbose:
+            click.echo(f"Starting workflow execution: {workflow_file}")
+            click.echo(f"Parallel mode: {'enabled' if parallel else 'disabled'}")
+        
+        # Execute workflow
+        result = run_workflow(workflow_file, use_parallel=parallel)
+        
+        # Output results
+        if verbose:
+            click.echo("\nExecution Results:")
+            click.echo(f"Status: {result['status']}")
+            click.echo(f"Summary: {result['summary']}")
+            click.echo(f"Execution Time: {result['execution_time_ms']}ms")
+            
+            if result.get('findings'):
+                click.echo("\nFindings:")
+                for finding in result['findings']:
+                    severity = finding['severity']
+                    color = {
+                        'INFO': 'blue',
+                        'WARN': 'yellow', 
+                        'ERROR': 'red'
+                    }.get(severity, 'white')
+                    click.secho(f"  [{severity}] {finding['message']}", fg=color)
+        
+        # Output full JSON result
+        click.echo("\n" + json.dumps(result, ensure_ascii=False, indent=2))
+        
+    except FileNotFoundError as e:
+        click.secho(f"✗ Error: {e}", fg="red", bold=True)
+        sys.exit(1)
+    except Exception as e:
+        click.secho(f"✗ Execution failed: {e}", fg="red", bold=True)
+        if verbose:
+            import traceback
+            traceback.print_exc()
         sys.exit(1)
 
 

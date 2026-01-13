@@ -35,7 +35,7 @@ class AgentLoader:
             KeyError: If the agent ID is not found in the registry.
         """
         agent_class = self._registry.get(agent_id)
-        return agent_class()
+        return agent_class(agent_id=agent_id)
 
     def list_agents(self) -> list[str]:
         """List all available agent IDs.
