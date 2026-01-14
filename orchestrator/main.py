@@ -29,6 +29,10 @@ from orchestrator.parallel.orchestrator import ParallelOrchestrator
 from orchestrator.agents.registry import AgentRegistry
 
 
+# Import feedback loop workflow engine
+from orchestrator.workflow_engine import run_workflow_with_feedback
+
+
 # Simple logger – in a full implementation this would be replaced by a structured
 # logging system defined in ``orchestrator/logging.py``.
 def _log(message: str, *, level: str = "INFO") -> None:
@@ -78,7 +82,7 @@ def _execute_stage(stage_name: str, agents: List[str]) -> None:
     # TODO: Resolve agents and invoke their execution logic.
 
 
-def run(workflow_file: str, use_parallel: bool = False) -> dict:
+def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool = False) -> dict:
     """Run the orchestrator against a workflow file.
 
     Returns a JSON‑serialisable dictionary matching the common response schema.
@@ -86,7 +90,9 @@ def run(workflow_file: str, use_parallel: bool = False) -> dict:
     workflow_path = Path(workflow_file)
     config = _load_and_validate(workflow_path)
 
-    if use_parallel:
+    if use_feedback_loop:
+        return run_workflow_with_feedback(workflow_path)
+    elif use_parallel:
         return _run_parallel_workflow(config)
     else:
         return _run_sequential_workflow(config)

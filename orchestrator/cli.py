@@ -229,8 +229,9 @@ def info(template_name: str, format: str, no_color: bool):
 @main.command()
 @click.argument("workflow_file", type=click.Path(exists=True))
 @click.option("--parallel", "-p", is_flag=True, help="Execute workflow using parallel processing")
+@click.option("--feedback-loop", "-f", is_flag=True, help="Enable feedback loop with quality reviews")
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed execution output")
-def run(workflow_file: str, parallel: bool, verbose: bool):
+def run(workflow_file: str, parallel: bool, feedback_loop: bool, verbose: bool):
     """
     Execute a workflow configuration.
 
@@ -240,9 +241,10 @@ def run(workflow_file: str, parallel: bool, verbose: bool):
         if verbose:
             click.echo(f"Starting workflow execution: {workflow_file}")
             click.echo(f"Parallel mode: {'enabled' if parallel else 'disabled'}")
+            click.echo(f"Feedback loop: {'enabled' if feedback_loop else 'disabled'}")
         
         # Execute workflow
-        result = run_workflow(workflow_file, use_parallel=parallel)
+        result = run_workflow(workflow_file, use_parallel=parallel, use_feedback_loop=feedback_loop)
         
         # Output results
         if verbose:
