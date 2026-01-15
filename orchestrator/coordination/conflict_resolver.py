@@ -694,6 +694,7 @@ class ConflictResolutionSystem:
 
     def get_system_status(self) -> Dict[str, Any]:
         """Get the current status of the conflict resolution system."""
+        # Don't use lock here to avoid deadlock - individual methods handle their own locking
         return {
             "conflict_detection": {
                 "total_detected": len(self.conflict_detector.get_conflict_history()),

@@ -285,12 +285,15 @@ class TaskDependencyGraph:
 
     def get_task_graph_metrics(self) -> Dict[str, Any]:
         """Get metrics about the task dependency graph."""
+        # Don't call methods that acquire locks to avoid deadlock
         with self._lock:
             total_tasks = len(self._tasks)
-            pending_tasks = len(self.get_tasks_by_status(TaskStatus.PENDING))
-            in_progress_tasks = len(self.get_tasks_by_status(TaskStatus.IN_PROGRESS))
-            completed_tasks = len(self.get_tasks_by_status(TaskStatus.COMPLETED))
-            failed_tasks = len(self.get_tasks_by_status(TaskStatus.FAILED))
+            
+            # Count tasks by status manually to avoid calling get_tasks_by_status
+            pending_tasks = sum(1 for task in self._tasks.values() if task.status == TaskStatus.PENDING)
+            in_progress_tasks = sum(1 for task in self._tasks.values() if task.status == TaskStatus.IN_PROGRESS)
+            completed_tasks = sum(1 for task in self._tasks.values() if task.status == TaskStatus.COMPLETED)
+            failed_tasks = sum(1 for task in self._tasks.values() if task.status == TaskStatus.FAILED)
             
             coordination_groups = len(self._coordination_groups)
             total_dependencies = sum(len(task.dependencies) for task in self._tasks.values())
