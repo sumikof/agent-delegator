@@ -159,37 +159,92 @@ class AutonomousAgent(Agent):
         return task.get("priority", 5)
 
     def _analyze_context_complexity(self, context: Dict[str, Any]) -> float:
-        """Analyze the complexity of the given context."""
-        # Simple complexity analysis based on context size and structure
-        complexity_score = 0.0
-        
-        # Add score based on number of keys
-        complexity_score += min(1.0, len(context) / 20)
-        
-        # Add score based on nested structures
-        for key, value in context.items():
-            if isinstance(value, dict):
-                complexity_score += min(0.5, len(value) / 10)
-            elif isinstance(value, list):
-                complexity_score += min(0.5, len(value) / 10)
-        
-        return min(1.0, complexity_score)
+        """Analyze the complexity of the given context with improved error handling."""
+        try:
+            if not isinstance(context, dict):
+                return 0.0
+                
+            complexity_score = 0.0
+            
+            # Add score based on number of keys
+            try:
+                complexity_score += min(1.0, len(context) / 20)
+            except Exception:
+                complexity_score += 0.1  # Default small score for invalid context
+                
+            # Add score based on nested structures
+            try:
+                for key, value in context.items():
+                    try:
+                        if isinstance(value, dict):
+                            complexity_score += min(0.5, len(value) / 10)
+                        elif isinstance(value, list):
+                            complexity_score += min(0.5, len(value) / 10)
+                    except Exception:
+                        # Skip invalid nested structures
+                        continue
+            except Exception:
+                # Skip if context iteration fails
+                pass
+                
+            # Add score for complex data types
+            try:
+                complex_types = 0
+                for value in context.values():
+                    if isinstance(value, (dict, list)):
+                        complex_types += 1
+                complexity_score += min(0.3, complex_types / 5)
+            except Exception:
+                pass
+                
+            return min(1.0, complexity_score)
+            
+        except Exception as e:
+            # Log error and return default complexity
+            self._log_error(f"Error analyzing context complexity: {str(e)}")
+            return 0.3  # Default medium complexity
 
     def _detect_resource_constraints(self, context: Dict[str, Any]) -> bool:
         """Detect potential resource constraints in the context."""
-        # Check for resource-related information
-        if "resources" in context:
-            resources = context["resources"]
-            
-            if isinstance(resources, dict):
-                for resource_name, resource_info in resources.items():
-                    if isinstance(resource_info, dict):
-                        # Check for low availability
-                        if resource_info.get("availability", 1.0) < 0.3:
-                            return True
-                        # Check for high contention
-                        if resource_info.get("contention", 0) > 0.7:
-                            return True
+        try:
+            # Check for resource-related information
+            if "resources" in context:
+                resources = context["resources"]
+                
+                if isinstance(resources, dict):
+                    for resource_name, resource_info in resources.items():
+                        if isinstance(resource_info, dict):
+                            # Check for low availability
+                            try:
+                                availability = float(resource_info.get("availability", 1.0))
+                                if availability < 0.3:
+                                    return True
+                            except (ValueError, TypeError):
+                                # Handle invalid availability values
+                                continue
+                                
+                            # Check for high contention
+                            try:
+                                contention = float(resource_info.get("contention", 0))
+                                if contention > 0.7:
+                                    return True
+                            except (ValueError, TypeError):
+                                # Handle invalid contention values
+                                continue
+                                
+                            # Check for resource limits
+                            try:
+                                current_usage = int(resource_info.get("current_usage", 0))
+                                max_capacity = int(resource_info.get("max_capacity", 100))
+                                if max_capacity > 0 and current_usage / max_capacity > 0.8:
+                                    return True
+                            except (ValueError, TypeError, ZeroDivisionError):
+                                # Handle invalid resource capacity values
+                                continue
+        except Exception as e:
+            # Log error but continue execution
+            self._log_error(f"Error detecting resource constraints: {str(e)}")
+            return False
         
         return False
 
@@ -214,6 +269,24 @@ class AutonomousAgent(Agent):
         timestamp = datetime.now().isoformat()
         context_hash = self._generate_context_hash(context)
         return f"{self.id}-{timestamp}-{context_hash[:8]}"
+
+    def _log_error(self, error_message: str) -> None:
+        """Log an error message for debugging and monitoring."""
+        error_record = {
+            "timestamp": datetime.now().isoformat(),
+            "error_type": "autonomy_error",
+            "message": error_message,
+            "agent_id": self.id,
+            "agent_name": self.name
+        }
+        
+        # Add to decision log for tracking
+        self.decision_log.append({
+            "timestamp": datetime.now().isoformat(),
+            "decision_type": "error_handling",
+            "error_message": error_message,
+            "severity": "warning"
+        })
 
     def learn_from_experience(self, feedback: Dict[str, Any]) -> None:
         """Learn from feedback and past experiences."""
@@ -391,12 +464,29 @@ class AutonomousAgent(Agent):
         return "continue_with_current_plan"
 
     def _task_has_dependencies(self, task_id: str) -> bool:
-        """Check if a task has dependencies."""
-        # Simple implementation: check memory for task information
-        for context_record in self.context_memory:
-            context_data = context_record["context_data"]
-            if "tasks" in context_data:
-                for task in context_data["tasks"]:
-                    if task.get("id") == task_id and task.get("dependencies"):
-                        return True
+        """Check if a task has dependencies with improved error handling."""
+        try:
+            # Check memory for task information
+            for context_record in self.context_memory:
+                try:
+                    context_data = context_record["context_data"]
+                    if "tasks" in context_data and isinstance(context_data["tasks"], list):
+                        for task in context_data["tasks"]:
+                            try:
+                                if task.get("id") == task_id and task.get("dependencies"):
+                                    # Check if dependencies is a non-empty list
+                                    dependencies = task.get("dependencies", [])
+                                    if isinstance(dependencies, list) and len(dependencies) > 0:
+                                        return True
+                            except Exception:
+                                # Skip invalid task entries
+                                continue
+                except Exception:
+                    # Skip invalid context records
+                    continue
+        except Exception as e:
+            # Log error but continue execution
+            self._log_error(f"Error checking task dependencies: {str(e)}")
+            return False
+        
         return False

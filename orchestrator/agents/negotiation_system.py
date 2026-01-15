@@ -24,39 +24,81 @@ class NegotiationSystem:
             "conflict_resolution": ConflictResolutionProtocol()
         }
         self.negotiation_history = []
+        self.error_log = []
         self.negotiation_metrics = {
             "total_negotiations": 0,
             "successful_negotiations": 0,
+            "failed_negotiations": 0,
             "average_negotiation_time": 0,
             "negotiation_types": defaultdict(int)
         }
 
-    def initiate_negotiation(self, negotiation_type: str, participants: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
-        """Initiate a negotiation process."""
-        if negotiation_type not in self.negotiation_protocols:
-            return {
-                "status": "error",
-                "message": f"Unknown negotiation type: {negotiation_type}"
-            }
-        
-        # Prepare negotiation context
-        negotiation_context = {
-            "negotiation_id": self._generate_negotiation_id(negotiation_type, participants, context),
-            "negotiation_type": negotiation_type,
-            "participants": participants,
-            "context": context,
-            "start_time": datetime.now().isoformat(),
-            "status": "initiated"
+    def _log_error(self, error_message: str, negotiation_type: str = "unknown") -> None:
+        """Log an error message for debugging and monitoring."""
+        error_record = {
+            "timestamp": datetime.now().isoformat(),
+            "error_type": "negotiation_error",
+            "message": error_message,
+            "negotiation_type": negotiation_type
         }
         
-        # Execute negotiation protocol
-        protocol = self.negotiation_protocols[negotiation_type]
-        result = protocol.execute(negotiation_context)
+        self.error_log.append(error_record)
+        self.negotiation_metrics["failed_negotiations"] += 1
         
-        # Log negotiation result
-        self._log_negotiation_result(negotiation_context, result)
-        
-        return result
+        # Keep error log size manageable
+        if len(self.error_log) > 20:
+            self.error_log = self.error_log[-20:]
+
+    def initiate_negotiation(self, negotiation_type: str, participants: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Initiate a negotiation process with improved error handling."""
+        try:
+            # Validate inputs
+            if not isinstance(participants, list) or not participants:
+                raise ValueError("Invalid participants: must be a non-empty list")
+            
+            if not isinstance(context, dict):
+                raise ValueError("Invalid context: must be a dictionary")
+            
+            if negotiation_type not in self.negotiation_protocols:
+                self._log_error(f"Unknown negotiation type: {negotiation_type}", negotiation_type)
+                return {
+                    "status": "error",
+                    "message": f"Unknown negotiation type: {negotiation_type}"
+                }
+            
+            # Prepare negotiation context
+            negotiation_context = {
+                "negotiation_id": self._generate_negotiation_id(negotiation_type, participants, context),
+                "negotiation_type": negotiation_type,
+                "participants": participants,
+                "context": context,
+                "start_time": datetime.now().isoformat(),
+                "status": "initiated"
+            }
+            
+            # Execute negotiation protocol
+            protocol = self.negotiation_protocols[negotiation_type]
+            result = protocol.execute(negotiation_context)
+            
+            # Validate result
+            if not isinstance(result, dict):
+                raise ValueError("Negotiation protocol returned invalid result")
+            
+            # Log negotiation result
+            self._log_negotiation_result(negotiation_context, result)
+            
+            return result
+            
+        except Exception as e:
+            # Log error and return error response
+            self._log_error(f"Negotiation initiation failed: {str(e)}", negotiation_type)
+            return {
+                "status": "error",
+                "message": f"Negotiation failed: {str(e)}",
+                "error_type": "negotiation_failure",
+                "negotiation_type": negotiation_type,
+                "participants": participants
+            }
 
     def get_negotiation_status(self, negotiation_id: str) -> Optional[Dict[str, Any]]:
         """Get the status of a negotiation."""

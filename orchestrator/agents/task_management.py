@@ -29,39 +29,90 @@ class TaskManager:
             "conditional": self._integrate_conditionally
         }
         self.task_history = []
+        self.error_log = []
         self.splitting_metrics = {
             "total_splits": 0,
             "successful_integrations": 0,
-            "average_split_size": 0
+            "average_split_size": 0,
+            "failed_splits": 0
         }
 
+    def _log_error(self, error_message: str) -> None:
+        """Log an error message for debugging and monitoring."""
+        error_record = {
+            "timestamp": datetime.now().isoformat(),
+            "error_type": "task_management_error",
+            "message": error_message
+        }
+        
+        self.error_log.append(error_record)
+        self.splitting_metrics["failed_splits"] += 1
+        
+        # Keep error log size manageable
+        if len(self.error_log) > 20:
+            self.error_log = self.error_log[-20:]
+
     def split_task(self, task: Dict[str, Any], strategy: str = "size_based", context: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
-        """Split a complex task into smaller subtasks."""
-        if strategy not in self.task_splitting_strategies:
-            strategy = "size_based"
-        
-        # Use the selected strategy
-        split_function = self.task_splitting_strategies[strategy]
-        subtasks = split_function(task, context or {})
-        
-        # Log the splitting operation
-        self._log_task_splitting(task, subtasks, strategy)
-        
-        return subtasks
+        """Split a complex task into smaller subtasks with improved error handling."""
+        try:
+            # Validate task input
+            if not isinstance(task, dict) or "id" not in task:
+                raise ValueError("Invalid task: must be a dictionary with 'id' field")
+            
+            # Validate strategy
+            if strategy not in self.task_splitting_strategies:
+                strategy = "size_based"
+            
+            # Use the selected strategy
+            split_function = self.task_splitting_strategies[strategy]
+            subtasks = split_function(task, context or {})
+            
+            # Validate subtasks
+            if not isinstance(subtasks, list):
+                raise ValueError("Task splitting returned invalid result")
+            
+            # Log the splitting operation
+            self._log_task_splitting(task, subtasks, strategy)
+            
+            return subtasks
+            
+        except Exception as e:
+            # Log error and return empty list
+            self._log_error(f"Task splitting failed: {str(e)}")
+            return []
 
     def integrate_tasks(self, subtasks: List[Dict[str, Any]], strategy: str = "sequential", context: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        """Integrate multiple subtasks into a completed task."""
-        if strategy not in self.task_integration_strategies:
-            strategy = "sequential"
-        
-        # Use the selected strategy
-        integrate_function = self.task_integration_strategies[strategy]
-        integrated_task = integrate_function(subtasks, context or {})
-        
-        # Log the integration operation
-        self._log_task_integration(subtasks, integrated_task, strategy)
-        
-        return integrated_task
+        """Integrate multiple subtasks into a completed task with improved error handling."""
+        try:
+            # Validate subtasks input
+            if not isinstance(subtasks, list):
+                raise ValueError("Invalid subtasks: must be a list")
+            
+            # Validate strategy
+            if strategy not in self.task_integration_strategies:
+                strategy = "sequential"
+            
+            # Use the selected strategy
+            integrate_function = self.task_integration_strategies[strategy]
+            integrated_task = integrate_function(subtasks, context or {})
+            
+            # Validate integrated task
+            if not isinstance(integrated_task, dict):
+                raise ValueError("Task integration returned invalid result")
+            
+            # Log the integration operation
+            self._log_task_integration(subtasks, integrated_task, strategy)
+            
+            return integrated_task
+            
+        except Exception as e:
+            # Log error and return empty task
+            self._log_error(f"Task integration failed: {str(e)}")
+            return {
+                "status": "failed",
+                "error": str(e),
+                "subtasks": [subtask.get("id", "unknown") for subtask in subtasks if isinstance(subtask, dict)]
+            }
 
     def _split_by_size(self, task: Dict[str, Any], context: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Split task based on size/complexity metrics."""

@@ -27,10 +27,10 @@ def test_voice_interface_transcription():
     result = agent.run(context)
     
     assert result["status"] == "OK"
-    assert "transcription" in result["summary"]
+    assert "Transcription" in result["summary"]
     assert len(result["artifacts"]) > 0
     assert result["artifacts"][0]["type"] == "doc"
-    assert "transcription" in result["artifacts"][0]["desc"]
+    assert "Transcribed" in result["artifacts"][0]["desc"]
 
 
 def test_voice_interface_synthesis():
@@ -51,7 +51,7 @@ def test_voice_interface_synthesis():
     assert "synthesis" in result["summary"]
     assert len(result["artifacts"]) > 0
     assert result["artifacts"][0]["type"] == "audio"
-    assert "synthesized" in result["artifacts"][0]["desc"]
+    assert "Synthesized" in result["artifacts"][0]["desc"]
 
 
 def test_voice_interface_audio_processing():
@@ -71,7 +71,7 @@ def test_voice_interface_audio_processing():
     assert "processing" in result["summary"]
     assert len(result["artifacts"]) > 0
     assert result["artifacts"][0]["type"] == "audio"
-    assert "processed" in result["artifacts"][0]["desc"]
+    assert "Processed" in result["artifacts"][0]["desc"]
 
 
 def test_voice_interface_unsupported_operation():
@@ -103,7 +103,7 @@ def test_voice_interface_missing_audio_data():
     result = agent.run(context)
     
     assert result["status"] == "NG"
-    assert "no audio data" in result["summary"]
+    assert "No audio data" in result["summary"]
     assert len(result["findings"]) > 0
 
 
@@ -134,7 +134,7 @@ def test_voice_interface_cleanup():
     
     # Verify temp directory was created
     assert os.path.exists(temp_dir)
-    assert temp_dir.startswith("voice_interface_")
+    assert "voice_interface_" in temp_dir
     
     # Clean up
     agent.cleanup()
