@@ -28,6 +28,9 @@ from orchestrator.utils.constants import LOGGING_LEVEL
 from orchestrator.parallel.orchestrator import ParallelOrchestrator
 from orchestrator.agents.registry import AgentRegistry
 from orchestrator.coordination import conflict_resolution_system
+from orchestrator.plugin.registry import PluginRegistry
+from orchestrator.plugin.loader import PluginLoader
+from orchestrator.plugin.manager import PluginManager
 
 
 # Import feedback loop workflow engine
@@ -90,16 +93,28 @@ def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool 
     """
     workflow_path = Path(workflow_file)
     config = _load_and_validate(workflow_path)
+    
+    # Initialize plugin system
+    plugin_registry = PluginRegistry()
+    plugin_loader = PluginLoader(plugin_registry)
+    
+    # Load built-in plugins
+    plugin_loader.load_plugins_from_directory("orchestrator/plugins")
+    
+    # Create plugin manager (we'll use a simple context manager for now)
+    from orchestrator.context import ContextManager
+    context_manager = ContextManager()
+    plugin_manager = PluginManager(plugin_registry, context_manager)
 
     if use_feedback_loop:
         return run_workflow_with_feedback(workflow_path)
     elif use_parallel:
-        return _run_parallel_workflow(config)
+        return _run_parallel_workflow(config, plugin_manager)
     else:
-        return _run_sequential_workflow(config)
+        return _run_sequential_workflow(config, plugin_manager)
 
 
-def _run_sequential_workflow(config: WorkflowConfig) -> dict:
+def _run_sequential_workflow(config: WorkflowConfig, plugin_manager: PluginManager) -> dict:
     """Run workflow using sequential execution (original implementation)."""
     # Iterate over stages in order
     for stage in config.workflow.stages:
@@ -112,14 +127,17 @@ def _run_sequential_workflow(config: WorkflowConfig) -> dict:
         "findings": [],
         "artifacts": [],
         "next_actions": [],
-        "context": {},
+        "context": {
+            "plugins_loaded": plugin_manager.list_active_plugins(),
+            "available_plugins": plugin_manager.registry.list_plugins()
+        },
         "trace_id": "${{uuid4()}}",  # placeholder – real implementation would generate a UUID
         "execution_time_ms": 0,
     }
     return response
 
 
-def _run_parallel_workflow(config: WorkflowConfig) -> dict:
+def _run_parallel_workflow(config: WorkflowConfig, plugin_manager: PluginManager) -> dict:
     """Run workflow using parallel execution."""
     import time
     import uuid
@@ -182,7 +200,9 @@ def _run_parallel_workflow(config: WorkflowConfig) -> dict:
             "parallel_execution": True,
             "task_count": len(task_ids),
             "execution_time_ms": int(execution_time * 1000),
-            "conflict_resolution": conflict_resolution_system.get_system_status()
+            "conflict_resolution": conflict_resolution_system.get_system_status(),
+            "plugins_loaded": plugin_manager.list_active_plugins(),
+            "available_plugins": plugin_manager.registry.list_plugins()
         },
         "trace_id": str(uuid.uuid4()),
         "execution_time_ms": int(execution_time * 1000),
