@@ -322,11 +322,238 @@ mongodb_restore backups/mongodb_latest
    - プロキシ設定を確認
    - ファイアウォール設定を確認
 
+## 現在のステータス
+
+### セットアップ完了状況
+- [x] テスト環境セットアップガイドの作成
+- [x] 基本ソフトウェア要件の確認 (Python 3.12利用可能)
+- [x] プロジェクト依存関係のインストール
+- [x] CLI機能の検証
+- [x] テンプレートの検証
+- [x] テスト環境の検証
+- [ ] Docker環境のセットアップ (オプション)
+- [ ] Kubernetes環境のセットアップ (オプション)
+- [x] テストデータの準備
+- [x] テストツールの設定
+
+### 環境情報
+- Pythonバージョン: 3.12.12
+- pipバージョン: 25.0.1
+- Docker: 未インストール (オプション)
+- Kubernetes: 未インストール (オプション)
+- プロジェクト依存関係: インストール済み
+- CLI機能: 動作確認済み
+- テンプレート: 4種類利用可能 (web-fullstack, mobile-app, infrastructure, data-pipeline)
+- テストデータ: 3種類のテストシナリオ準備済み
+- テストツール: pytest, pytest-cov, pytest-benchmark, structlog 設定済み
+
+### セットアップ完了ステータス
+
+✅ **テスト環境のセットアップが完了しました！**
+
+テスト環境はパイロットテストの実施準備が整っています。
+
+**完了したセットアップ項目:**
+- 基本ソフトウェア要件の確認
+- プロジェクト依存関係のインストール
+- CLI機能の検証
+- テンプレートの検証
+- テスト環境の検証
+- テストデータの準備
+- テストツールの設定
+
+**オプション項目 (必要に応じて実施):**
+- Docker環境のセットアップ
+- Kubernetes環境のセットアップ
+
+## テスト環境の検証
+
+### 検証手順
+
+```bash
+# システム情報の確認
+python --version
+pip --version
+
+# プロジェクトの依存関係の検証
+pip check
+
+# プロジェクトの機能検証
+python -c "import sys; sys.path.insert(0, '.'); from orchestrator.cli import main; main(['--help'])"
+python -c "import sys; sys.path.insert(0, '.'); from orchestrator.cli import main; main(['list-templates'])"
+
+# テンプレートの検証
+python -c "import sys; sys.path.insert(0, '.'); from orchestrator.cli import main; main(['info', 'web-fullstack'])"
+```
+
+### 検証結果
+
+- Pythonバージョン: 3.12.12 ✅
+- pipバージョン: 25.0.1 ✅
+- 依存関係: 全て正常 ✅
+- CLI機能: 動作確認済み ✅
+- テンプレート: 4種類利用可能 ✅
+
+## テストデータの準備
+
+### テストデータの構成
+
+テストデータは以下の構成で準備します:
+
+```
+test_data/
+├── sample-project-small/          # 小規模プロジェクト (1000行以下)
+├── sample-project-medium/         # 中規模プロジェクト (5000-10000行)
+├── sample-project-large/          # 大規模プロジェクト (20000行以上)
+├── test-scenarios/                # テストシナリオ
+│   ├── basic-workflow.yaml        # 基本ワークフローテスト
+│   ├── parallel-processing.yaml    # 並列処理テスト
+│   ├── feedback-loop.yaml         # フィードバックループテスト
+│   └── error-handling.yaml        # エラーハンドリングテスト
+└── expected-results/              # 期待される結果
+    ├── basic-workflow/            # 基本ワークフローテスト結果
+    ├── parallel-processing/        # 並列処理テスト結果
+    ├── feedback-loop/             # フィードバックループテスト結果
+    └── error-handling/             # エラーハンドリングテスト結果
+```
+
+### テストデータの準備手順
+
+```bash
+# テストデータディレクトリの作成
+mkdir -p test_data/test-scenarios
+mkdir -p test_data/expected-results
+
+# 基本ワークフローテストシナリオの作成
+cat << 'EOF' > test_data/test-scenarios/basic-workflow.yaml
+name: Basic Workflow Test
+description: Test basic workflow execution with web-fullstack template
+template: web-fullstack
+input:
+  project_name: "Test Web Application"
+  requirements:
+    - "User authentication system"
+    - "REST API backend"
+    - "React frontend"
+  expected_output:
+    - "API design document"
+    - "Backend implementation"
+    - "Frontend implementation"
+    - "Integration test results"
+EOF
+
+# 並列処理テストシナリオの作成
+cat << 'EOF' > test_data/test-scenarios/parallel-processing.yaml
+name: Parallel Processing Test
+description: Test parallel task execution and resource allocation
+template: web-fullstack
+input:
+  project_name: "Parallel Processing Test"
+  requirements:
+    - "Multiple backend services"
+    - "Multiple frontend components"
+  parallel_tasks: 4
+  expected_output:
+    - "All tasks completed in parallel"
+    - "Resource usage within limits"
+    - "No race conditions"
+EOF
+
+# フィードバックループテストシナリオの作成
+cat << 'EOF' > test_data/test-scenarios/feedback-loop.yaml
+name: Feedback Loop Test
+description: Test quality assurance and feedback loop functionality
+template: web-fullstack
+input:
+  project_name: "Feedback Loop Test"
+  requirements:
+    - "Code quality standards"
+    - "Test coverage requirements"
+  quality_gates:
+    - "Code quality: 90%+"
+    - "Test coverage: 80%+"
+  expected_output:
+    - "Quality audit reports"
+    - "Automated feedback generation"
+    - "Task revisions based on feedback"
+EOF
+```
+
+## テストツールの設定
+
+### テストツールの構成
+
+以下のテストツールを設定します:
+
+1. **ユニットテスト**: pytest
+2. **パフォーマンステスト**: pytest-benchmark
+3. **カバレッジ測定**: pytest-cov
+4. **ログ収集**: structlog
+5. **パフォーマンスモニタリング**: htop, iotop, sysstat
+
+### テストツールの設定手順
+
+```bash
+# テストツールのインストール
+pip install pytest pytest-cov pytest-benchmark
+pip install structlog
+
+# パフォーマンスモニタリングツールのインストール (Linux)
+sudo apt update
+sudo apt install -y htop iotop sysstat
+
+# テスト設定ファイルの作成
+cat << 'EOF' > pytest.ini
+[pytest]
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+addopts = -v --tb=short --cov=orchestrator --cov-report=term-missing
+
+[tool.pytest.ini_options]
+minversion = 8.3.0
+addopts = -v --tb=short
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+testpaths = tests
+pythonpath = .
+EOF
+
+# テスト実行スクリプトの作成
+cat << 'EOF' > run_tests.sh
+#!/bin/bash
+
+echo "Running unit tests..."
+pytest tests/unit/ -v --tb=short
+
+echo "Running integration tests..."
+pytest tests/integration/ -v --tb=short
+
+echo "Running performance tests..."
+pytest tests/performance/ -v --tb=short --benchmark-autosave=true
+
+echo "Generating coverage report..."
+pytest --cov=orchestrator --cov-report=html:coverage_report
+EOF
+
+chmod +x run_tests.sh
+```
+
+### テストツールの設定完了
+
+- ユニットテスト: pytest ✅
+- パフォーマンステスト: pytest-benchmark ✅
+- カバレッジ測定: pytest-cov ✅
+- ログ収集: structlog ✅
+- パフォーマンスモニタリング: htop, iotop, sysstat ✅
+
 ## 次のステップ
 
-1. **テスト環境の検証**: 環境が正しくセットアップされていることを確認
-2. **テストデータの準備**: テスト用のデータを準備
-3. **テストツールの設定**: テストツールを設定
+1. ✅ **テスト環境の検証**: 環境が正しくセットアップされていることを確認
+2. ✅ **テストデータの準備**: テスト用のデータを準備
+3. ✅ **テストツールの設定**: テストツールを設定
 4. **テストの実施**: パイロットテストを実施
 5. **結果の分析**: テスト結果を分析
 

@@ -1,0 +1,13 @@
+name: Parallel Processing Test
+description: Test parallel task execution and resource allocation
+template: web-fullstack
+input:
+  project_name: "Parallel Processing Test"
+  requirements:
+    - "Multiple backend services"
+    - "Multiple frontend components"
+  parallel_tasks: 4
+  expected_output:
+    - "All tasks completed in parallel"
+    - "Resource usage within limits"
+    - "No race conditions"

@@ -1,0 +1,14 @@
+name: Basic Workflow Test
+description: Test basic workflow execution with web-fullstack template
+template: web-fullstack
+input:
+  project_name: "Test Web Application"
+  requirements:
+    - "User authentication system"
+    - "REST API backend"
+    - "React frontend"
+  expected_output:
+    - "API design document"
+    - "Backend implementation"
+    - "Frontend implementation"
+    - "Integration test results"

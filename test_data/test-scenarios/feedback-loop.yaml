@@ -1,0 +1,15 @@
+name: Feedback Loop Test
+description: Test quality assurance and feedback loop functionality
+template: web-fullstack
+input:
+  project_name: "Feedback Loop Test"
+  requirements:
+    - "Code quality standards"
+    - "Test coverage requirements"
+  quality_gates:
+    - "Code quality: 90%+"
+    - "Test coverage: 80%+"
+  expected_output:
+    - "Quality audit reports"
+    - "Automated feedback generation"
+    - "Task revisions based on feedback"
