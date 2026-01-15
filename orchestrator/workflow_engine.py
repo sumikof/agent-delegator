@@ -20,6 +20,8 @@ from orchestrator.agents.registry import AgentRegistry
 from orchestrator.agents.loader import AgentLoader
 from orchestrator.parallel.orchestrator import ParallelOrchestrator
 from orchestrator.utils.constants import LOGGING_LEVEL
+from orchestrator.notification.manager import NotificationManager, ConsoleNotifier
+from orchestrator.notification.notifier import NotificationType
 
 
 class TaskStatus(str, Enum):
@@ -31,6 +33,18 @@ class TaskStatus(str, Enum):
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     DONE = "DONE"
+
+
+# Valid state transitions for feedback loop workflow
+VALID_TRANSITIONS = {
+    TaskStatus.NEW: [TaskStatus.IN_PROGRESS],
+    TaskStatus.IN_PROGRESS: [TaskStatus.IN_REVIEW, TaskStatus.NEEDS_FIXES],
+    TaskStatus.IN_REVIEW: [TaskStatus.APPROVED, TaskStatus.NEEDS_FIXES, TaskStatus.REJECTED],
+    TaskStatus.NEEDS_FIXES: [TaskStatus.IN_PROGRESS, TaskStatus.IN_REVIEW],
+    TaskStatus.APPROVED: [TaskStatus.DONE],
+    TaskStatus.REJECTED: [TaskStatus.DONE],
+    TaskStatus.DONE: []  # Terminal state
+}
 
 
 class FeedbackSeverity(str, Enum):
@@ -64,14 +78,25 @@ class TaskState:
         self.updated_at = time.time()
         self.max_retries = 3
         self.timeout_at = self.created_at + 3600  # 1 hour timeout
+        self.dependencies = []  # List of task_ids this task depends on
+        self.dependents = []    # List of task_ids that depend on this task
+        self.blocked_by = []    # List of task_ids currently blocking this task
     
     def add_feedback(self, feedback: Dict[str, Any]) -> None:
         """Add feedback to this task."""
         self.feedback_history.append(feedback)
         self.updated_at = time.time()
     
-    def change_status(self, new_status: TaskStatus, reason: str = "") -> None:
-        """Change task status and record history."""
+    def change_status(self, new_status: TaskStatus, reason: str = "", notifier: Optional[Notifier] = None) -> None:
+        """Change task status and record history with validation."""
+        # Validate state transition
+        if new_status not in VALID_TRANSITIONS.get(self.status, []):
+            raise ValueError(f"Invalid state transition: {self.status} -> {new_status}")
+        
+        # Prevent transition from terminal state
+        if self.status == TaskStatus.DONE:
+            raise ValueError(f"Cannot transition from terminal state: {self.status}")
+        
         self.status_history.append({
             "from": self.status,
             "to": new_status,
@@ -80,6 +105,15 @@ class TaskState:
         })
         self.status = new_status
         self.updated_at = time.time()
+        
+        # Send status change notification if notifier is provided
+        if notifier:
+            notifier.send_status_change_notification(
+                task_id=self.task_id,
+                old_status=self.status_history[-1]["from"],
+                new_status=new_status,
+                reason=reason
+            )
     
     def increment_retry(self) -> None:
         """Increment retry count."""
@@ -94,6 +128,41 @@ class TaskState:
         """Check if task has reached maximum retries."""
         return self.retry_count >= self.max_retries
     
+    def add_dependency(self, task_id: str) -> None:
+        """Add a dependency to this task."""
+        if task_id not in self.dependencies:
+            self.dependencies.append(task_id)
+            self.updated_at = time.time()
+    
+    def add_dependent(self, task_id: str) -> None:
+        """Add a dependent task."""
+        if task_id not in self.dependents:
+            self.dependents.append(task_id)
+            self.updated_at = time.time()
+    
+    def add_blocked_by(self, task_id: str) -> None:
+        """Add a task that is currently blocking this task."""
+        if task_id not in self.blocked_by:
+            self.blocked_by.append(task_id)
+            self.updated_at = time.time()
+    
+    def remove_blocked_by(self, task_id: str) -> None:
+        """Remove a task from blocked_by list."""
+        if task_id in self.blocked_by:
+            self.blocked_by.remove(task_id)
+            self.updated_at = time.time()
+    
+    def is_blocked(self) -> bool:
+        """Check if this task is currently blocked by other tasks."""
+        return len(self.blocked_by) > 0
+    
+    def can_start(self) -> bool:
+        """Check if this task can start based on dependencies and blocking status."""
+        # Task can start if:
+        # 1. It's not blocked by other tasks
+        # 2. All dependencies are completed (DONE status)
+        return not self.is_blocked() and self.status == TaskStatus.NEW
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert task state to dictionary."""
         return {
@@ -107,22 +176,89 @@ class TaskState:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "max_retries": self.max_retries,
-            "timeout_at": self.timeout_at
+            "timeout_at": self.timeout_at,
+            "dependencies": self.dependencies,
+            "dependents": self.dependents,
+            "blocked_by": self.blocked_by
         }
 
 
 class FeedbackLoopWorkflowEngine:
     """Workflow engine with feedback loop support."""
     
-    def __init__(self):
+    def __init__(self, state_file: Optional[str] = None):
         self.task_states: Dict[str, TaskState] = {}
         self.parallel_orchestrator = ParallelOrchestrator(agent_registry=AgentRegistry())
         self.agent_loader = AgentLoader()
+        self.state_file = state_file
+        
+        # Initialize notification system
+        self.notification_manager = NotificationManager()
+        self.notifier = ConsoleNotifier(self.notification_manager)
+        
+        # Load state if state_file is provided
+        if state_file:
+            self.load_state()
     
     def _log(self, message: str, *, level: str = "INFO") -> None:
         """Simple logger."""
         if LOGGING_LEVEL == "DEBUG" or level != "DEBUG":
             print(f"[{level}] {message}")
+    
+    def save_state(self) -> None:
+        """Save current task states to file."""
+        if not self.state_file:
+            return
+        
+        try:
+            state_data = {
+                "task_states": {tid: ts.to_dict() for tid, ts in self.task_states.items()},
+                "timestamp": time.time()
+            }
+            
+            with open(self.state_file, "w") as f:
+                json.dump(state_data, f, indent=2)
+            
+            self._log(f"State saved to {self.state_file}")
+        except Exception as e:
+            self._log(f"Failed to save state: {e}", level="ERROR")
+    
+    def load_state(self) -> None:
+        """Load task states from file."""
+        if not self.state_file:
+            return
+        
+        try:
+            if Path(self.state_file).exists():
+                with open(self.state_file, "r") as f:
+                    state_data = json.load(f)
+                
+                # Restore task states
+                for tid, ts_data in state_data.get("task_states", {}).items():
+                    task_state = TaskState(
+                        task_id=ts_data["task_id"],
+                        agent_type=ts_data["agent_type"],
+                        payload=ts_data["payload"]
+                    )
+                    
+                    # Restore all attributes
+                    task_state.status = TaskStatus(ts_data["status"])
+                    task_state.status_history = ts_data["status_history"]
+                    task_state.feedback_history = ts_data["feedback_history"]
+                    task_state.retry_count = ts_data["retry_count"]
+                    task_state.created_at = ts_data["created_at"]
+                    task_state.updated_at = ts_data["updated_at"]
+                    task_state.max_retries = ts_data["max_retries"]
+                    task_state.timeout_at = ts_data["timeout_at"]
+                    task_state.dependencies = ts_data.get("dependencies", [])
+                    task_state.dependents = ts_data.get("dependents", [])
+                    task_state.blocked_by = ts_data.get("blocked_by", [])
+                    
+                    self.task_states[tid] = task_state
+                
+                self._log(f"State loaded from {self.state_file}")
+        except Exception as e:
+            self._log(f"Failed to load state: {e}", level="ERROR")
     
     def submit_task(self, agent_type: str, payload: Dict[str, Any]) -> str:
         """Submit a new task to the workflow engine."""
@@ -136,11 +272,126 @@ class FeedbackLoopWorkflowEngine:
         task_state = TaskState(task_id, agent_type, payload)
         self.task_states[task_id] = task_state
         
-        # Change status to IN_PROGRESS
-        task_state.change_status(TaskStatus.IN_PROGRESS, "Task submitted")
+        # Set up dependencies from payload if provided
+        if "dependencies" in payload:
+            for dep_id in payload["dependencies"]:
+                task_state.add_dependency(dep_id)
+                # Update the dependent task's dependents list
+                if dep_id in self.task_states:
+                    self.task_states[dep_id].add_dependent(task_id)
+        
+        # Resolve dependencies before starting
+        self._resolve_dependencies(task_id)
+        
+        # Change status to IN_PROGRESS if not blocked
+        if task_state.can_start():
+            self.change_task_status(task_id, TaskStatus.IN_PROGRESS, "Task submitted and ready to start")
+        else:
+            self._log(f"Task {task_id} is blocked by dependencies: {task_state.blocked_by}")
         
         self._log(f"Task submitted: {task_id} (agent: {agent_type})")
         return task_id
+    
+    def _resolve_dependencies(self, task_id: str) -> None:
+        """Resolve dependencies for a task and update blocking status."""
+        if task_id not in self.task_states:
+            return
+            
+        task_state = self.task_states[task_id]
+        
+        # Check if all dependencies are completed
+        all_dependencies_completed = True
+        for dep_id in task_state.dependencies:
+            if dep_id in self.task_states:
+                dep_state = self.task_states[dep_id]
+                if dep_state.status != TaskStatus.DONE:
+                    all_dependencies_completed = False
+                    task_state.add_blocked_by(dep_id)
+            else:
+                # Dependency not found, consider it as blocking
+                all_dependencies_completed = False
+                task_state.add_blocked_by(dep_id)
+        
+        # If all dependencies are completed, remove blocking
+        if all_dependencies_completed:
+            task_state.blocked_by = []
+        
+        self._log(f"Dependency resolution for {task_id}: blocked_by={task_state.blocked_by}")
+    
+    def _update_dependents(self, task_id: str) -> None:
+        """Update dependents when a task status changes."""
+        if task_id not in self.task_states:
+            return
+            
+        task_state = self.task_states[task_id]
+        
+        # Update all dependents
+        for dep_id in task_state.dependents:
+            if dep_id in self.task_states:
+                self._resolve_dependencies(dep_id)
+    
+    def change_task_status(self, task_id: str, new_status: TaskStatus, reason: str = "") -> None:
+        """Change task status and update dependents."""
+        if task_id not in self.task_states:
+            raise ValueError(f"Task not found: {task_id}")
+        
+        task_state = self.task_states[task_id]
+        old_status = task_state.status
+        
+        # Change status with notification
+        task_state.change_status(new_status, reason, self.notifier)
+        
+        # Send specific notifications based on status change
+        self._send_status_specific_notifications(task_state, old_status, new_status, reason)
+        
+        # Update dependents if status changed to DONE
+        if new_status == TaskStatus.DONE and old_status != TaskStatus.DONE:
+            self._update_dependents(task_id)
+    
+    def _send_status_specific_notifications(
+        self, 
+        task_state: TaskState, 
+        old_status: TaskStatus, 
+        new_status: TaskStatus, 
+        reason: str
+    ) -> None:
+        """Send specific notifications based on status transitions."""
+        # Approval completed notification
+        if new_status == TaskStatus.APPROVED:
+            self.notifier.send_approval_completed_notification(
+                task_id=task_state.task_id,
+                approval_details={
+                    "task_id": task_state.task_id,
+                    "agent_type": task_state.agent_type,
+                    "reason": reason,
+                    "timestamp": time.time()
+                }
+            )
+        
+        # Fix request notification
+        elif new_status == TaskStatus.NEEDS_FIXES:
+            self.notifier.send_fix_request_notification(
+                task_id=task_state.task_id,
+                fix_details={
+                    "task_id": task_state.task_id,
+                    "agent_type": task_state.agent_type,
+                    "reason": reason,
+                    "retry_count": task_state.retry_count,
+                    "timestamp": time.time()
+                }
+            )
+        
+        # Feedback request notification when moving to IN_REVIEW
+        elif new_status == TaskStatus.IN_REVIEW:
+            self.notifier.send_feedback_request_notification(
+                task_id=task_state.task_id,
+                feedback_details={
+                    "task_id": task_state.task_id,
+                    "agent_type": task_state.agent_type,
+                    "from_status": old_status,
+                    "timestamp": time.time()
+                }
+            )
     
     def _generate_feedback(self, task_id: str, agent_results: Dict[str, Any]) -> Dict[str, Any]:
         """Generate feedback for a completed task."""
@@ -227,19 +478,43 @@ class FeedbackLoopWorkflowEngine:
         # Add feedback to task state
         task_state.add_feedback(feedback)
         
-        # Change status based on feedback
-        new_status = feedback["status"]
-        task_state.change_status(new_status, f"Feedback: {feedback['recommendation']}")
+        # Handle feedback based on current task status
+        current_status = task_state.status
+        
+        if current_status == TaskStatus.IN_PROGRESS:
+            # From IN_PROGRESS, we can only go to IN_REVIEW or NEEDS_FIXES
+            if feedback["status"] == TaskStatus.APPROVED:
+                # If feedback says approved, transition to IN_REVIEW first
+                new_status = TaskStatus.IN_REVIEW
+                self.change_task_status(task_id, new_status, f"Feedback: {feedback['recommendation']}")
+            elif feedback["status"] == TaskStatus.NEEDS_FIXES:
+                new_status = TaskStatus.NEEDS_FIXES
+                self.change_task_status(task_id, new_status, f"Feedback: {feedback['recommendation']}")
+            else:
+                # For REJECTED or other statuses, go to IN_REVIEW for final decision
+                new_status = TaskStatus.IN_REVIEW
+                self.change_task_status(task_id, new_status, f"Feedback: {feedback['recommendation']}")
+        elif current_status == TaskStatus.IN_REVIEW:
+            # From IN_REVIEW, we can go to APPROVED, NEEDS_FIXES, or REJECTED
+            new_status = feedback["status"]
+            self.change_task_status(task_id, new_status, f"Feedback: {feedback['recommendation']}")
+        else:
+            # For other statuses, use the feedback status directly
+            new_status = feedback["status"]
+            self.change_task_status(task_id, new_status, f"Feedback: {feedback['recommendation']}")
         
         self._log(f"Task {task_id} status changed to {new_status}")
         
         # Handle different statuses
         if new_status == TaskStatus.APPROVED:
-            task_state.change_status(TaskStatus.DONE, "Task approved and completed")
+            self.change_task_status(task_id, TaskStatus.DONE, "Task approved and completed")
             return True
         elif new_status == TaskStatus.NEEDS_FIXES:
             if task_state.has_reached_max_retries():
-                task_state.change_status(TaskStatus.REJECTED, "Max retries reached")
+                # From NEEDS_FIXES, we need to go through IN_REVIEW to get to REJECTED
+                self.change_task_status(task_id, TaskStatus.IN_REVIEW, "Max retries reached, moving to review for final decision")
+                # Then immediately transition to REJECTED from IN_REVIEW
+                self.change_task_status(task_id, TaskStatus.REJECTED, "Max retries reached")
                 return False
             else:
                 # Resubmit task for fixes
@@ -255,6 +530,9 @@ class FeedbackLoopWorkflowEngine:
                 task_state.change_status(TaskStatus.IN_PROGRESS, "Resubmitted for fixes")
                 return False
         elif new_status == TaskStatus.REJECTED:
+            return False
+        else:
+            # For IN_REVIEW status, we need to wait for final approval
             return False
         
         return True
@@ -304,8 +582,13 @@ class FeedbackLoopWorkflowEngine:
                         # Task needs more work
                         new_remaining_tasks.append(task_id)
                         self._log(f"Task needs fixes: {task_id}")
+                elif task_state.status == TaskStatus.NEW and task_state.can_start():
+                    # Start blocked tasks that are now ready
+                    self.change_task_status(task_id, TaskStatus.IN_PROGRESS, "Task dependencies resolved, starting now")
+                    new_remaining_tasks.append(task_id)
+                    self._log(f"Task started after dependency resolution: {task_id}")
                 else:
-                    # Task still in progress
+                    # Task still in progress or blocked
                     new_remaining_tasks.append(task_id)
             
             remaining_tasks = new_remaining_tasks
@@ -313,9 +596,17 @@ class FeedbackLoopWorkflowEngine:
             # Add some delay to allow tasks to complete
             if remaining_tasks:
                 time.sleep(1.0)
+            
+            # Save state periodically
+            if self.state_file and iteration % 10 == 0:
+                self.save_state()
         
         if iteration >= max_iterations and remaining_tasks:
             self._log(f"Max iterations reached, {len(remaining_tasks)} tasks still pending", level="WARNING")
+        
+        # Save final state
+        if self.state_file:
+            self.save_state()
         
         # Shutdown parallel orchestrator
         self.parallel_orchestrator.shutdown()
@@ -340,7 +631,18 @@ class FeedbackLoopWorkflowEngine:
                 "completed_tasks": len(completed_tasks),
                 "total_tasks": len(all_tasks),
                 "execution_time_ms": int(execution_time * 1000),
-                "task_states": {tid: ts.to_dict() for tid, ts in self.task_states.items()}
+                "task_states": {tid: ts.to_dict() for tid, ts in self.task_states.items()},
+                "notifications": {
+                    "total_notifications": len(self.notification_manager.get_notifications()),
+                    "unread_count": self.notification_manager.get_unread_count(),
+                    "notification_types": {
+                        "status_change": self.notification_manager.get_unread_count(NotificationType.STATUS_CHANGE),
+                        "feedback_request": self.notification_manager.get_unread_count(NotificationType.FEEDBACK_REQUEST),
+                        "approval_completed": self.notification_manager.get_unread_count(NotificationType.APPROVAL_COMPLETED),
+                        "fix_request": self.notification_manager.get_unread_count(NotificationType.FIX_REQUEST),
+                        "error": self.notification_manager.get_unread_count(NotificationType.ERROR)
+                    }
+                }
             },
             "trace_id": str(uuid.uuid4()),
             "execution_time_ms": int(execution_time * 1000),
@@ -379,5 +681,7 @@ def run_workflow_with_feedback(config_path: str) -> Dict[str, Any]:
         return {"status": "ERROR", "message": str(exc)}
     
     # Run workflow with feedback loop
-    engine = FeedbackLoopWorkflowEngine()
+    # Generate state file name based on workflow name
+    state_file = f"workflow_{config.project.name}_state.json"
+    engine = FeedbackLoopWorkflowEngine(state_file=state_file)
     return engine.run_workflow(config)
