@@ -77,9 +77,16 @@ class TaskManager:
             return subtasks
             
         except Exception as e:
-            # Log error and return empty list
+            # Log error and return a minimal task structure
             self._log_error(f"Task splitting failed: {str(e)}")
-            return []
+            # Return a single task with minimal structure to avoid empty results
+            return [{
+                "id": f"task_{datetime.now().timestamp()}",
+                "name": "Fallback Task",
+                "description": "Created due to task splitting error",
+                "status": "pending",
+                "error": str(e)
+            }]
 
     def integrate_tasks(self, subtasks: List[Dict[str, Any]], strategy: str = "sequential", context: Dict[str, Any] | None = None) -> Dict[str, Any]:
         """Integrate multiple subtasks into a completed task with improved error handling."""
@@ -87,6 +94,10 @@ class TaskManager:
             # Validate subtasks input
             if not isinstance(subtasks, list):
                 raise ValueError("Invalid subtasks: must be a list")
+            
+            # Handle empty subtask list
+            if not subtasks:
+                return {}
             
             # Validate strategy
             if strategy not in self.task_integration_strategies:
@@ -118,6 +129,14 @@ class TaskManager:
         """Split task based on size/complexity metrics."""
         subtasks = []
         
+        # Validate task structure
+        if not task or not isinstance(task, dict):
+            self._log_error("Invalid task structure: task is None or not a dictionary")
+            return []
+        
+        # Generate task ID if missing
+        task_id = task.get("id", f"task_{datetime.now().timestamp()}")
+        
         # Estimate task complexity
         complexity = self._estimate_task_complexity(task)
         
@@ -127,10 +146,10 @@ class TaskManager:
         # Create subtasks
         for i in range(num_subtasks):
             subtask = {
-                "id": f"{task['id']}_subtask_{i+1}",
+                "id": f"{task_id}_subtask_{i+1}",
                 "name": f"{task.get('name', 'Task')} - Part {i+1}",
                 "description": f"Subtask {i+1} of {task.get('name', 'Task')}",
-                "original_task_id": task["id"],
+                "original_task_id": task_id,
                 "subtask_index": i + 1,
                 "total_subtasks": num_subtasks,
                 "priority": task.get("priority", 5),
@@ -142,7 +161,7 @@ class TaskManager:
             
             # Add dependencies for sequential execution
             if i > 0:
-                subtask["dependencies"] = [f"{task['id']}_subtask_{i}"]
+                subtask["dependencies"] = [f"{task_id}_subtask_{i}"]
             
             subtasks.append(subtask)
         

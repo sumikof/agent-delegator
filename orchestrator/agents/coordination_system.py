@@ -90,10 +90,17 @@ class CoordinationSystem:
         resource_info = request.get("resource_info", {})
         
         # Determine resolution strategy based on resource characteristics
-        if resource_info.get("availability", 1.0) < 0.3:
+        try:
+            availability = float(resource_info.get("availability", 1.0))
+            contention = float(resource_info.get("contention", 0))
+        except (ValueError, TypeError):
+            availability = 1.0
+            contention = 0.0
+        
+        if availability < 0.3:
             # Low availability: prioritize based on task urgency
             resolution = self._resolve_low_availability_conflict(request)
-        elif resource_info.get("contention", 0) > 0.7:
+        elif contention > 0.7:
             # High contention: use fair allocation strategy
             resolution = self._resolve_high_contention_conflict(request)
         else:
@@ -494,14 +501,62 @@ class CoordinationSystem:
     def _generate_request_id(self, request: Dict[str, Any]) -> str:
         """Generate a unique ID for a coordination request."""
         import hashlib
-        request_str = json.dumps(request, sort_keys=True)
-        return hashlib.md5(request_str.encode()).hexdigest()
+        try:
+            # Convert request to a JSON-serializable format
+            serializable_request = self._make_request_serializable(request)
+            request_str = json.dumps(serializable_request, sort_keys=True)
+            return hashlib.md5(request_str.encode()).hexdigest()
+        except Exception as e:
+            # Fallback hash if serialization fails
+            self._log_error(f"Failed to generate request ID: {str(e)}")
+            return hashlib.md5(str(request).encode()).hexdigest()
+
+    def _make_request_serializable(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert request to a JSON-serializable format."""
+        if request is None:
+            return {}
+        
+        serializable_request = {}
+        for key, value in request.items():
+            try:
+                if isinstance(value, (str, int, float, bool)) or value is None:
+                    serializable_request[key] = value
+                elif isinstance(value, (list, tuple)):
+                    serializable_request[key] = [self._make_value_serializable(item) for item in value]
+                elif isinstance(value, dict):
+                    serializable_request[key] = self._make_request_serializable(value)
+                else:
+                    # Convert other objects to string representation
+                    serializable_request[key] = str(value)
+            except Exception:
+                # If conversion fails, store as string
+                serializable_request[key] = str(value)
+        
+        return serializable_request
+
+    def _make_value_serializable(self, value: Any) -> Any:
+        """Convert a single value to a JSON-serializable format."""
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        elif isinstance(value, (list, tuple)):
+            return [self._make_value_serializable(item) for item in value]
+        elif isinstance(value, dict):
+            return self._make_request_serializable(value)
+        else:
+            return str(value)
 
     def _generate_negotiation_id(self, context: Dict[str, Any]) -> str:
         """Generate a unique ID for a negotiation."""
         import hashlib
-        context_str = json.dumps(context, sort_keys=True)
-        return hashlib.md5(context_str.encode()).hexdigest()
+        try:
+            # Convert context to a JSON-serializable format
+            serializable_context = self._make_request_serializable(context)
+            context_str = json.dumps(serializable_context, sort_keys=True)
+            return hashlib.md5(context_str.encode()).hexdigest()
+        except Exception as e:
+            # Fallback hash if serialization fails
+            self._log_error(f"Failed to generate negotiation ID: {str(e)}")
+            return hashlib.md5(str(context).encode()).hexdigest()
 
     def get_coordination_metrics(self) -> Dict[str, Any]:
         """Get coordination system metrics."""

@@ -120,6 +120,9 @@ class AutonomousAgent(Agent):
 
     def _apply_dynamic_priority(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Apply dynamic priority management to the context."""
+        if context is None:
+            return {}
+        
         updated_context = context.copy()
         
         # Check if priority information exists in context
@@ -250,19 +253,67 @@ class AutonomousAgent(Agent):
 
     def _determine_context_type(self, context: Dict[str, Any]) -> str:
         """Determine the type of context based on its content."""
-        if "tasks" in context:
-            return "task_management"
-        elif "resources" in context:
-            return "resource_management"
-        elif "workflow" in context:
-            return "workflow_coordination"
-        else:
-            return "general"
+        if context is None:
+            return "empty"
+        
+        try:
+            if "tasks" in context:
+                return "task_management"
+            elif "resources" in context:
+                return "resource_management"
+            elif "workflow" in context:
+                return "workflow_coordination"
+            else:
+                return "general"
+        except TypeError:
+            # Handle case where context is not iterable
+            return "invalid"
 
     def _generate_context_hash(self, context: Dict[str, Any]) -> str:
         """Generate a hash for the context to use as an identifier."""
-        context_str = json.dumps(context, sort_keys=True)
-        return hashlib.md5(context_str.encode()).hexdigest()
+        try:
+            # Convert context to a JSON-serializable format
+            serializable_context = self._make_context_serializable(context)
+            context_str = json.dumps(serializable_context, sort_keys=True)
+            return hashlib.md5(context_str.encode()).hexdigest()
+        except Exception as e:
+            # Fallback hash if serialization fails
+            self._log_error(f"Failed to generate context hash: {str(e)}")
+            return hashlib.md5(str(context).encode()).hexdigest()
+
+    def _make_context_serializable(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert context to a JSON-serializable format."""
+        if context is None:
+            return {}
+        
+        serializable_context = {}
+        for key, value in context.items():
+            try:
+                if isinstance(value, (str, int, float, bool)) or value is None:
+                    serializable_context[key] = value
+                elif isinstance(value, (list, tuple)):
+                    serializable_context[key] = [self._make_value_serializable(item) for item in value]
+                elif isinstance(value, dict):
+                    serializable_context[key] = self._make_context_serializable(value)
+                else:
+                    # Convert other objects to string representation
+                    serializable_context[key] = str(value)
+            except Exception:
+                # If conversion fails, store as string
+                serializable_context[key] = str(value)
+        
+        return serializable_context
+
+    def _make_value_serializable(self, value: Any) -> Any:
+        """Convert a single value to a JSON-serializable format."""
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        elif isinstance(value, (list, tuple)):
+            return [self._make_value_serializable(item) for item in value]
+        elif isinstance(value, dict):
+            return self._make_context_serializable(value)
+        else:
+            return str(value)
 
     def _generate_trace_id(self, context: Dict[str, Any]) -> str:
         """Generate a trace ID for this execution."""

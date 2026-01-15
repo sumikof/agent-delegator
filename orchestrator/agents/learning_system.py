@@ -183,6 +183,12 @@ class LearningSystem:
                 reason = adjustment.get("reason", "unknown")
                 effectiveness = adjustment.get("effectiveness", 0)
                 
+                # Ensure effectiveness is a number before comparison
+                try:
+                    effectiveness = float(effectiveness)
+                except (ValueError, TypeError):
+                    effectiveness = 0.0
+                
                 if effectiveness > 0.5:  # Considered effective
                     reason_effectiveness[reason] += effectiveness
             
@@ -466,8 +472,49 @@ class LearningSystem:
     def _generate_feedback_id(self, feedback: Dict[str, Any]) -> str:
         """Generate a unique ID for feedback."""
         import hashlib
-        feedback_str = json.dumps(feedback, sort_keys=True)
-        return hashlib.md5(feedback_str.encode()).hexdigest()
+        try:
+            # Convert feedback to a JSON-serializable format
+            serializable_feedback = self._make_feedback_serializable(feedback)
+            feedback_str = json.dumps(serializable_feedback, sort_keys=True)
+            return hashlib.md5(feedback_str.encode()).hexdigest()
+        except Exception as e:
+            # Fallback hash if serialization fails
+            self._log_error(f"Failed to generate feedback ID: {str(e)}")
+            return hashlib.md5(str(feedback).encode()).hexdigest()
+
+    def _make_feedback_serializable(self, feedback: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert feedback to a JSON-serializable format."""
+        if feedback is None:
+            return {}
+        
+        serializable_feedback = {}
+        for key, value in feedback.items():
+            try:
+                if isinstance(value, (str, int, float, bool)) or value is None:
+                    serializable_feedback[key] = value
+                elif isinstance(value, (list, tuple)):
+                    serializable_feedback[key] = [self._make_value_serializable(item) for item in value]
+                elif isinstance(value, dict):
+                    serializable_feedback[key] = self._make_feedback_serializable(value)
+                else:
+                    # Convert other objects to string representation
+                    serializable_feedback[key] = str(value)
+            except Exception:
+                # If conversion fails, store as string
+                serializable_feedback[key] = str(value)
+        
+        return serializable_feedback
+
+    def _make_value_serializable(self, value: Any) -> Any:
+        """Convert a single value to a JSON-serializable format."""
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        elif isinstance(value, (list, tuple)):
+            return [self._make_value_serializable(item) for item in value]
+        elif isinstance(value, dict):
+            return self._make_feedback_serializable(value)
+        else:
+            return str(value)
 
     def _generate_performance_id(self, performance: Dict[str, Any]) -> str:
         """Generate a unique ID for performance data."""
