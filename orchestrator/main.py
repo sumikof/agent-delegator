@@ -75,15 +75,64 @@ def _load_and_validate(workflow_path: Path) -> "WorkflowConfig":
     return config
 
 
-def _execute_stage(stage_name: str, agents: List[str]) -> None:
-    """Placeholder for stage execution.
+def _execute_stage(stage_name: str, agents: List[str], config: WorkflowConfig) -> List[Dict[str, Any]]:
+    """Execute a stage by running all agents in sequence.
 
-    In a complete system each agent ID would be resolved to an implementation
-    class and its ``run`` method invoked. For now we simply log the intended
-    actions.
+    Args:
+        stage_name: The name of the stage being executed.
+        agents: List of agent IDs to execute.
+        config: The workflow configuration.
+
+    Returns:
+        List of agent execution results.
     """
     _log(f"Executing stage '{stage_name}' with agents: {', '.join(agents)}")
-    # TODO: Resolve agents and invoke their execution logic.
+    
+    # Import agent loader
+    from orchestrator.agents.loader import loader
+    
+    results = []
+    
+    for agent_id in agents:
+        try:
+            # Load the agent instance
+            agent = loader.load_agent(agent_id)
+            
+            # Create context for this agent execution
+            context = {
+                "stage": stage_name,
+                "agent_id": agent_id,
+                "workflow_config": config.model_dump(),
+                "project": config.project.model_dump() if config.project else {},
+                "workflow": config.workflow.model_dump() if config.workflow else {}
+            }
+            
+            # Execute the agent
+            _log(f"  Executing agent '{agent_id}'...")
+            result = agent.run(context)
+            
+            # Store the result
+            results.append(result)
+            _log(f"  Agent '{agent_id}' completed with status: {result.get('status', 'UNKNOWN')}")
+            
+        except Exception as e:
+            _log(f"  Error executing agent '{agent_id}': {str(e)}", level="ERROR")
+            results.append({
+                "status": "ERROR",
+                "summary": f"Failed to execute agent {agent_id}",
+                "findings": [{
+                    "severity": "ERROR",
+                    "message": str(e),
+                    "ref": f"agent_execution_{agent_id}"
+                }],
+                "artifacts": [],
+                "next_actions": [],
+                "context": {"error": str(e)},
+                "trace_id": "error-trace-id",
+                "execution_time_ms": 0
+            })
+    
+    return results
 
 
 def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool = False) -> dict:
@@ -116,11 +165,20 @@ def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool 
 
 def _run_sequential_workflow(config: WorkflowConfig, plugin_manager: PluginManager) -> dict:
     """Run workflow using sequential execution (original implementation)."""
+    import time
+    import uuid
+    
+    start_time = time.time()
+    all_results = []
+    
     # Iterate over stages in order
     for stage in config.workflow.stages:
-        _execute_stage(stage.name, stage.agents)
+        stage_results = _execute_stage(stage.name, stage.agents, config)
+        all_results.extend(stage_results)
 
-    # Build a minimal success response
+    execution_time = time.time() - start_time
+    
+    # Build response with execution details
     response = {
         "status": "OK",
         "summary": f"Workflow '{config.project.name}' executed successfully",
@@ -129,10 +187,13 @@ def _run_sequential_workflow(config: WorkflowConfig, plugin_manager: PluginManag
         "next_actions": [],
         "context": {
             "plugins_loaded": plugin_manager.list_active_plugins(),
-            "available_plugins": plugin_manager.registry.list_plugins()
+            "available_plugins": plugin_manager.registry.list_plugins(),
+            "execution_results": all_results,
+            "stage_count": len(config.workflow.stages),
+            "agent_execution_count": len(all_results)
         },
-        "trace_id": "${{uuid4()}}",  # placeholder – real implementation would generate a UUID
-        "execution_time_ms": 0,
+        "trace_id": str(uuid.uuid4()),
+        "execution_time_ms": int(execution_time * 1000),
     }
     return response
 
