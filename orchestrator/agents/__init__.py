@@ -20,6 +20,7 @@ from .backend_dev_agent import BackendDevAgent
 from .frontend_dev_agent import FrontendDevAgent
 from .reviewer_be_agent import ReviewerBEAgent
 from .reviewer_fe_agent import ReviewerFEAgent
+from .voice_interface import VoiceInterfaceAgent
 from .registry import AgentRegistry, registry
 from .loader import AgentLoader, loader
 
@@ -37,6 +38,7 @@ registry.register("backend_dev", BackendDevAgent)
 registry.register("frontend_dev", FrontendDevAgent)
 registry.register("reviewer_be", ReviewerBEAgent)
 registry.register("reviewer_fe", ReviewerFEAgent)
+registry.register("voice_interface", VoiceInterfaceAgent)
 
 __all__ = [
     "Agent",
@@ -53,6 +55,7 @@ __all__ = [
     "FrontendDevAgent",
     "ReviewerBEAgent",
     "ReviewerFEAgent",
+    "VoiceInterfaceAgent",
     "AgentRegistry",
     "registry",
     "AgentLoader",
