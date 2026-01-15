@@ -28,7 +28,7 @@ class TestParallelIntegration(unittest.TestCase):
         task_ids = []
         for i in range(3):
             task_id = self.orchestrator.submit_task(
-                agent_type="client_liaison",  # Use an existing agent type
+                agent_type="client-liaison",  # Use an existing agent type (kebab-case)
                 payload={
                     "test_data": f"task_{i}",
                     "iteration": i
