@@ -232,21 +232,23 @@ class ResourceAllocationProtocol(NegotiationProtocol):
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute resource allocation negotiation."""
         participants = context.get("participants", [])
-        resources = context.get("resources", {})
+        # Handle nested context structure
+        actual_context = context.get("context", context)
+        resources = actual_context.get("resources", {})
         
         if not participants or not resources:
             return {
                 "status": "error",
-                "message": "Insufficient information for resource allocation negotiation"
+                "message": f"Insufficient information for resource allocation negotiation: participants={participants}, resources={resources}"
             }
         
         # Gather agent requirements and priorities
         agent_requirements = {}
         for agent_id in participants:
             agent_requirements[agent_id] = {
-                "priority": context.get(f"{agent_id}_priority", 5),
-                "required_resources": context.get(f"{agent_id}_required_resources", []),
-                "flexibility": context.get(f"{agent_id}_flexibility", 0.5)
+                "priority": actual_context.get(f"{agent_id}_priority", 5),
+                "required_resources": actual_context.get(f"{agent_id}_required_resources", []),
+                "flexibility": actual_context.get(f"{agent_id}_flexibility", 0.5)
             }
         
         # Calculate fair allocation
@@ -303,7 +305,9 @@ class TaskPrioritizationProtocol(NegotiationProtocol):
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute task prioritization negotiation."""
         participants = context.get("participants", [])
-        tasks = context.get("tasks", [])
+        # Handle nested context structure
+        actual_context = context.get("context", context)
+        tasks = actual_context.get("tasks", [])
         
         if not participants or not tasks:
             return {
@@ -315,14 +319,14 @@ class TaskPrioritizationProtocol(NegotiationProtocol):
         task_priorities = defaultdict(list)
         for agent_id in participants:
             for task_id in tasks:
-                agent_priority = context.get(f"{agent_id}_{task_id}_priority", 5)
+                agent_priority = actual_context.get(f"{agent_id}_{task_id}_priority", 5)
                 task_priorities[task_id].append(agent_priority)
         
         # Calculate consensus priorities
         consensus_priorities = {}
         for task_id, priorities in task_priorities.items():
             # Use weighted average based on agent priorities
-            agent_priorities = context.get("agent_priorities", {})
+            agent_priorities = actual_context.get("agent_priorities", {})
             weights = [agent_priorities.get(agent_id, 5) for agent_id in participants]
             
             if weights and len(weights) == len(priorities):

@@ -138,7 +138,7 @@ class LearningSystem:
                 })
         
         # General suggestions based on context
-        if "tasks" in context and len(context["tasks"]) > 3:
+        if "tasks" in context and len(context["tasks"]) > 1:
             suggestions.append({
                 "type": "task_management",
                 "priority": "medium",

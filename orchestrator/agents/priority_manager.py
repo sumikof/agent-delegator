@@ -88,7 +88,7 @@ class PriorityManager:
             dependency_score = task.get("dependency_score", 0)
             
             # Adjust priority based on dependency score
-            priority_adjustment = math.floor(dependency_score * 2)
+            priority_adjustment = math.ceil(dependency_score * 2)
             new_priority = min(10, max(1, original_priority + priority_adjustment))
             
             task["priority"] = new_priority

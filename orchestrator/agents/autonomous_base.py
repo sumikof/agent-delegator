@@ -91,7 +91,7 @@ class AutonomousAgent(Agent):
         complexity = self._analyze_context_complexity(context)
         
         # Make decisions based on context
-        if complexity > 0.7:  # High complexity
+        if complexity > 0.3:  # Medium complexity
             decisions.append({
                 "decision_type": "context_analysis",
                 "decision": "high_complexity_detected",

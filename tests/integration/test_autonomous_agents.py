@@ -25,7 +25,20 @@ class TestAutonomousAgent(unittest.TestCase):
         self.simple_context = {
             "task_id": "test_task_1",
             "priority": 5,
-            "description": "Test task for autonomous agent"
+            "description": "Test task for autonomous agent",
+            "dependencies": ["task_2", "task_3"],
+            "resources": {
+                "resource_1": {
+                    "type": "compute",
+                    "availability": 0.8,
+                    "contention": 0.2
+                }
+            },
+            "metadata": {
+                "created_by": "test_user",
+                "created_at": "2024-01-01T00:00:00Z",
+                "tags": ["test", "autonomous"]
+            }
         }
 
     def test_autonomous_agent_initialization(self):

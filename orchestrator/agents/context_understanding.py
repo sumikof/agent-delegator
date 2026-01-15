@@ -167,7 +167,7 @@ class ContextAnalyzer:
                     if availability < 0.3:
                         issues.append({
                             "type": "resource_constraint",
-                            "severity": "high" if availability < 0.1 else "medium",
+                            "severity": "high" if availability <= 0.1 else "medium",
                             "resource_id": resource_id,
                             "message": f"Low resource availability: {availability:.1%}",
                             "suggested_action": "optimize_resource_usage"
