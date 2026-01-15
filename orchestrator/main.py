@@ -31,10 +31,19 @@ from orchestrator.coordination import conflict_resolution_system
 from orchestrator.plugin.registry import PluginRegistry
 from orchestrator.plugin.loader import PluginLoader
 from orchestrator.plugin.manager import PluginManager
+from orchestrator.monitoring.metrics_collector import MetricsCollector
+from orchestrator.monitoring.resource_monitor import ResourceMonitor
+from orchestrator.monitoring.stability_tracker import StabilityTracker
 
 
 # Import feedback loop workflow engine
 from orchestrator.workflow_engine import run_workflow_with_feedback
+
+
+# Global monitoring system instances
+metrics_collector = None
+resource_monitor = None
+stability_tracker = None
 
 
 # Simple logger – in a full implementation this would be replaced by a structured
@@ -107,9 +116,21 @@ def _execute_stage(stage_name: str, agents: List[str], config: WorkflowConfig) -
                 "workflow": config.workflow.model_dump() if config.workflow else {}
             }
             
-            # Execute the agent
+            # Execute the agent with monitoring
             _log(f"  Executing agent '{agent_id}'...")
-            result = agent.run(context)
+            
+            # Start monitoring context
+            with metrics_collector.start_agent_monitoring(agent_id, f"{stage_name}_{agent_id}") as monitor:
+                result = agent.run(context)
+            
+            # Record monitoring data and stability events
+            if result.get('status') == 'ERROR':
+                stability_tracker.record_error(
+                    agent_name=agent_id,
+                    task_name=f"{stage_name}_{agent_id}",
+                    error_message=result.get('findings', [{}])[0].get('message', 'Unknown error'),
+                    severity='error'
+                )
             
             # Store the result
             results.append(result)
@@ -117,6 +138,14 @@ def _execute_stage(stage_name: str, agents: List[str], config: WorkflowConfig) -
             
         except Exception as e:
             _log(f"  Error executing agent '{agent_id}': {str(e)}", level="ERROR")
+            
+            # Record crash event
+            stability_tracker.record_crash(
+                agent_name=agent_id,
+                task_name=f"{stage_name}_{agent_id}",
+                error_message=str(e)
+            )
+            
             results.append({
                 "status": "ERROR",
                 "summary": f"Failed to execute agent {agent_id}",
@@ -154,13 +183,28 @@ def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool 
     from orchestrator.context import ContextManager
     context_manager = ContextManager()
     plugin_manager = PluginManager(plugin_registry, context_manager)
+    
+    # Initialize monitoring system
+    global metrics_collector, resource_monitor, stability_tracker
+    metrics_collector = MetricsCollector()
+    resource_monitor = ResourceMonitor()
+    stability_tracker = StabilityTracker()
 
-    if use_feedback_loop:
-        return run_workflow_with_feedback(workflow_path)
-    elif use_parallel:
-        return _run_parallel_workflow(config, plugin_manager)
-    else:
-        return _run_sequential_workflow(config, plugin_manager)
+    try:
+        if use_feedback_loop:
+            return run_workflow_with_feedback(workflow_path)
+        elif use_parallel:
+            return _run_parallel_workflow(config, plugin_manager)
+        else:
+            return _run_sequential_workflow(config, plugin_manager)
+    finally:
+        # Shutdown monitoring system
+        if metrics_collector:
+            metrics_collector.shutdown()
+        if resource_monitor:
+            resource_monitor.shutdown()
+        if stability_tracker:
+            stability_tracker.shutdown()
 
 
 def _run_sequential_workflow(config: WorkflowConfig, plugin_manager: PluginManager) -> dict:
@@ -195,6 +239,15 @@ def _run_sequential_workflow(config: WorkflowConfig, plugin_manager: PluginManag
         "trace_id": str(uuid.uuid4()),
         "execution_time_ms": int(execution_time * 1000),
     }
+    
+    # Add monitoring data to response
+    if metrics_collector:
+        response["monitoring"] = {
+            "performance_metrics": metrics_collector.get_aggregated_stats(),
+            "resource_usage": resource_monitor.get_aggregated_stats(),
+            "stability": stability_tracker.get_aggregated_stats()
+        }
+    
     return response
 
 
@@ -268,6 +321,15 @@ def _run_parallel_workflow(config: WorkflowConfig, plugin_manager: PluginManager
         "trace_id": str(uuid.uuid4()),
         "execution_time_ms": int(execution_time * 1000),
     }
+    
+    # Add monitoring data to response
+    if metrics_collector:
+        response["monitoring"] = {
+            "performance_metrics": metrics_collector.get_aggregated_stats(),
+            "resource_usage": resource_monitor.get_aggregated_stats(),
+            "stability": stability_tracker.get_aggregated_stats()
+        }
+    
     return response
 
 
