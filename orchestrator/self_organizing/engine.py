@@ -10,7 +10,7 @@ from typing import Dict, List, Any
 from dataclasses import dataclass
 from ..agents.registry import AgentRegistry
 from ..monitoring import PerformanceMonitor
-from .evolutionary import EvolutionaryLearningSystem, AdaptationExperience
+from .evolutionary import EvolutionaryLearningSystem, AdaptationExperience, EvolvedStrategy
 
 
 @dataclass

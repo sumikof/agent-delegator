@@ -8,5 +8,6 @@ and stability tracking for the agent orchestration system.
 from .metrics_collector import MetricsCollector
 from .resource_monitor import ResourceMonitor
 from .stability_tracker import StabilityTracker
+from .performance_monitor import PerformanceMonitor
 
-__all__ = ["MetricsCollector", "ResourceMonitor", "StabilityTracker"]
+__all__ = ["MetricsCollector", "ResourceMonitor", "StabilityTracker", "PerformanceMonitor"]
