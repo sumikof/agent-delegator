@@ -27,6 +27,7 @@ from orchestrator.config.validator import ConfigValidator
 from orchestrator.utils.constants import LOGGING_LEVEL
 from orchestrator.parallel.orchestrator import ParallelOrchestrator
 from orchestrator.agents.registry import AgentRegistry
+from orchestrator.coordination import conflict_resolution_system
 
 
 # Import feedback loop workflow engine
@@ -125,6 +126,9 @@ def _run_parallel_workflow(config: WorkflowConfig) -> dict:
     
     start_time = time.time()
     
+    # Start conflict resolution monitoring
+    conflict_resolution_system.start_monitoring()
+    
     # Create parallel orchestrator
     orchestrator = ParallelOrchestrator(agent_registry=AgentRegistry())
     
@@ -153,6 +157,9 @@ def _run_parallel_workflow(config: WorkflowConfig) -> dict:
         if result:
             results.append(result)
     
+    # Stop conflict resolution monitoring
+    conflict_resolution_system.stop_monitoring()
+    
     # Shutdown orchestrator
     orchestrator.shutdown()
     
@@ -174,7 +181,8 @@ def _run_parallel_workflow(config: WorkflowConfig) -> dict:
         "context": {
             "parallel_execution": True,
             "task_count": len(task_ids),
-            "execution_time_ms": int(execution_time * 1000)
+            "execution_time_ms": int(execution_time * 1000),
+            "conflict_resolution": conflict_resolution_system.get_system_status()
         },
         "trace_id": str(uuid.uuid4()),
         "execution_time_ms": int(execution_time * 1000),

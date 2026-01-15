@@ -32,3 +32,23 @@ class Agent:
             A dictionary matching the common response schema.
         """
         raise NotImplementedError("Agent subclasses must implement the run method")
+
+    def receive_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """Receive a message from another agent.
+
+        Args:
+            message: Message data conforming to the agent communication protocol.
+
+        Returns:
+            A response message or None if no response is needed.
+        """
+        # Default implementation: ignore messages
+        return {"status": "ignored", "message": "Agent does not handle messages"}
+
+    def can_handle_coordination(self) -> bool:
+        """Check if this agent can handle coordination requests.
+
+        Returns:
+            True if the agent can handle coordination, False otherwise.
+        """
+        return False
