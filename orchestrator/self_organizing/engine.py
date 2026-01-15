@@ -10,6 +10,7 @@ from typing import Dict, List, Any
 from dataclasses import dataclass
 from ..agents.registry import AgentRegistry
 from ..monitoring import PerformanceMonitor
+from .evolutionary import EvolutionaryLearningSystem, AdaptationExperience
 
 
 @dataclass
@@ -42,6 +43,11 @@ class SelfOrganizingEngine:
         self.adaptation_threshold = 0.75
         self.last_adaptation_time = 0
         self.adaptation_cooldown = 300  # 5分間のクールダウン
+        
+        # 進化的学習システムを初期化
+        self.evolutionary_system = EvolutionaryLearningSystem()
+        self.adaptation_history = []
+        self.max_history_length = 1000
         
     def _initialize_system_state(self) -> SystemState:
         """システム状態を初期化"""
@@ -154,11 +160,56 @@ class SelfOrganizingEngine:
             self._apply_structure(best_structure)
             self.last_adaptation_time = time.time()
             
+            # 適応経験を記録
+            performance_improvement = best_performance - current_performance
+            adaptation_experience = AdaptationExperience(
+                strategy={
+                    "name": "structure_optimization",
+                    "parameters": {
+                        "optimization_type": "neighbor_search",
+                        "neighbor_count": len(neighbor_structures)
+                    }
+                },
+                context={
+                    "agent_count": len(current_structure["agent_roles"]),
+                    "task_load": environment_data["tasks"].get("queue_length", 0),
+                    "avg_performance": avg_performance
+                },
+                result={
+                    "status": "success",
+                    "performance_improvement": performance_improvement
+                },
+                timestamp=time.time(),
+                performance_improvement=performance_improvement
+            )
+            
+            # 進化的学習システムに経験を記録
+            self.evolutionary_system.record_adaptation_experience(
+                strategy=adaptation_experience.strategy,
+                context=adaptation_experience.context,
+                result=adaptation_experience.result,
+                performance_improvement=adaptation_experience.performance_improvement
+            )
+            
+            # 適応履歴を記録
+            self.adaptation_history.append(adaptation_experience)
+            if len(self.adaptation_history) > self.max_history_length:
+                self.adaptation_history.pop(0)
+            
+            # 定期的に戦略を進化させる
+            if len(self.adaptation_history) % 10 == 0:  # 10回の適応ごとに進化
+                self.evolutionary_system.evolve_strategies()
+            
             return {
                 "status": "adapted",
                 "old_structure": current_structure,
                 "new_structure": best_structure,
-                "performance_improvement": best_performance - current_performance
+                "performance_improvement": performance_improvement,
+                "evolutionary_data": {
+                    "generation": self.evolutionary_system.get_generation(),
+                    "strategy_count": len(self.evolutionary_system.get_strategy_population()),
+                    "knowledge_base_size": len(self.evolutionary_system.get_knowledge_base())
+                }
             }
         else:
             return {"status": "no_improvement", "reason": "no_better_structure_found"}
@@ -237,3 +288,194 @@ class SelfOrganizingEngine:
         """エージェントのパフォーマンスメトリクスを更新"""
         if agent_id in self.current_state.agent_profiles:
             self.current_state.agent_profiles[agent_id].performance_metrics.update(metrics)
+    
+    def adapt_system_with_evolutionary_learning(self) -> Dict[str, Any]:
+        """進化的学習を使用してシステムを適応"""
+        if not self.evaluate_adaptation_needed():
+            return {"status": "no_adaptation_needed", "reason": "adaptation_threshold_not_met"}
+        
+        # 環境データを取得
+        environment_data = self.monitor_environment()
+        
+        # 進化的学習システムから最良の戦略を取得
+        best_strategy = self.evolutionary_system.get_best_strategy(environment_data)
+        
+        if best_strategy:
+            # 戦略に基づいて適応を実行
+            adaptation_result = self._apply_evolutionary_strategy(best_strategy, environment_data)
+            
+            return {
+                **adaptation_result,
+                "evolutionary_strategy": {
+                    "strategy_id": best_strategy.strategy_id,
+                    "strategy_name": best_strategy.strategy_data["name"],
+                    "generation": best_strategy.generation,
+                    "fitness_score": best_strategy.fitness_score
+                }
+            }
+        else:
+            # 進化的戦略が利用できない場合は標準的な適応を使用
+            return self.adapt_system()
+    
+    def _apply_evolutionary_strategy(self, strategy: EvolvedStrategy, environment_data: Dict[str, Any]) -> Dict[str, Any]:
+        """進化的戦略を適用"""
+        current_structure = self._get_current_structure()
+        current_performance = self._evaluate_structure(current_structure)
+        
+        strategy_name = strategy.strategy_data["name"]
+        strategy_params = strategy.strategy_data["parameters"]
+        
+        if strategy_name == "role_swap":
+            # 役割入れ替え戦略
+            new_structure = self._apply_role_swap_strategy(current_structure, strategy_params)
+        elif strategy_name == "load_balancing":
+            # 負荷均等化戦略
+            new_structure = self._apply_load_balancing_strategy(current_structure, strategy_params)
+        elif strategy_name == "capability_matching":
+            # 能力マッチング戦略
+            new_structure = self._apply_capability_matching_strategy(current_structure, strategy_params)
+        elif strategy_name == "performance_based":
+            # パフォーマンスベース戦略
+            new_structure = self._apply_performance_based_strategy(current_structure, strategy_params)
+        else:
+            # 未知の戦略の場合は標準的な適応を使用
+            return self.adapt_system()
+        
+        # 新しい構造を評価
+        new_performance = self._evaluate_structure(new_structure)
+        performance_improvement = new_performance - current_performance
+        
+        # 構造を適用
+        self._apply_structure(new_structure)
+        self.last_adaptation_time = time.time()
+        
+        # 適応経験を記録
+        adaptation_experience = AdaptationExperience(
+            strategy=strategy.strategy_data,
+            context=environment_data,
+            result={
+                "status": "success" if performance_improvement > 0 else "neutral",
+                "performance_improvement": performance_improvement
+            },
+            timestamp=time.time(),
+            performance_improvement=performance_improvement
+        )
+        
+        # 進化的学習システムに経験を記録
+        self.evolutionary_system.record_adaptation_experience(
+            strategy=adaptation_experience.strategy,
+            context=adaptation_experience.context,
+            result=adaptation_experience.result,
+            performance_improvement=adaptation_experience.performance_improvement
+        )
+        
+        # 適応履歴を記録
+        self.adaptation_history.append(adaptation_experience)
+        if len(self.adaptation_history) > self.max_history_length:
+            self.adaptation_history.pop(0)
+        
+        # 定期的に戦略を進化させる
+        if len(self.adaptation_history) % 10 == 0:
+            self.evolutionary_system.evolve_strategies()
+        
+        return {
+            "status": "adapted_with_evolutionary",
+            "old_structure": current_structure,
+            "new_structure": new_structure,
+            "performance_improvement": performance_improvement,
+            "evolutionary_data": {
+                "generation": self.evolutionary_system.get_generation(),
+                "strategy_count": len(self.evolutionary_system.get_strategy_population()),
+                "knowledge_base_size": len(self.evolutionary_system.get_knowledge_base())
+            }
+        }
+    
+    def _apply_role_swap_strategy(self, structure: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
+        """役割入れ替え戦略を適用"""
+        import copy
+        new_structure = copy.deepcopy(structure)
+        agent_roles = new_structure["agent_roles"]
+        
+        agent_ids = list(agent_roles.keys())
+        num_swaps = min(params.get("max_swaps", 3), len(agent_ids) - 1)
+        
+        for _ in range(num_swaps):
+            if random.random() < params.get("swap_probability", 0.3):
+                i, j = random.sample(range(len(agent_ids)), 2)
+                agent_i, agent_j = agent_ids[i], agent_ids[j]
+                
+                # 役割を入れ替え
+                agent_roles[agent_i], agent_roles[agent_j] = agent_roles[agent_j], agent_roles[agent_i]
+        
+        return new_structure
+    
+    def _apply_load_balancing_strategy(self, structure: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
+        """負荷均等化戦略を適用"""
+        import copy
+        new_structure = copy.deepcopy(structure)
+        agent_roles = new_structure["agent_roles"]
+        
+        # 役割の分布を均等化
+        role_counts = {}
+        for role in agent_roles.values():
+            role_counts[role] = role_counts.get(role, 0) + 1
+        
+        avg_count = len(agent_roles) / len(role_counts) if role_counts else 1
+        
+        for role, count in role_counts.items():
+            if count > avg_count * (1 + params.get("balance_threshold", 0.2)):
+                # 役割を持つエージェントを減らす
+                agents_with_role = [agent_id for agent_id, r in agent_roles.items() if r == role]
+                excess = int(count - avg_count)
+                
+                for agent_id in agents_with_role[:excess]:
+                    # 他の役割に割り当て
+                    other_roles = [r for r in role_counts.keys() if r != role]
+                    if other_roles:
+                        new_role = random.choice(other_roles)
+                        agent_roles[agent_id] = new_role
+        
+        return new_structure
+    
+    def _apply_capability_matching_strategy(self, structure: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
+        """能力マッチング戦略を適用"""
+        import copy
+        new_structure = copy.deepcopy(structure)
+        agent_roles = new_structure["agent_roles"]
+        
+        # エージェントの能力に基づいて役割を割り当て
+        all_roles = list(set(agent_roles.values()))
+        if all_roles:
+            for agent_id in agent_roles:
+                if random.random() < params.get("exploration_rate", 0.1):
+                    # 探索：ランダムな役割を割り当て
+                    new_role = random.choice(all_roles)
+                    agent_roles[agent_id] = new_role
+                # 利用：現在の役割を維持
+        
+        return new_structure
+    
+    def _apply_performance_based_strategy(self, structure: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
+        """パフォーマンスベース戦略を適用"""
+        import copy
+        new_structure = copy.deepcopy(structure)
+        agent_roles = new_structure["agent_roles"]
+        
+        # パフォーマンスに基づいて役割を割り当て
+        all_roles = list(set(agent_roles.values()))
+        if all_roles:
+            for agent_id in agent_roles:
+                if random.random() < params.get("performance_weight", 0.9):
+                    # パフォーマンスに基づいて役割を割り当て
+                    new_role = random.choice(all_roles)
+                    agent_roles[agent_id] = new_role
+        
+        return new_structure
+    
+    def get_evolutionary_system(self) -> EvolutionaryLearningSystem:
+        """進化的学習システムを取得"""
+        return self.evolutionary_system
+    
+    def get_adaptation_history(self) -> List[AdaptationExperience]:
+        """適応履歴を取得"""
+        return list(self.adaptation_history)

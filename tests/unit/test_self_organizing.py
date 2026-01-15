@@ -180,6 +180,52 @@ def test_self_organizing_engine_monitor_environment():
     assert environment_data["tasks"]["queue_length"] == 3
 
 
+def test_self_organizing_engine_evolutionary_learning():
+    """Test evolutionary learning integration"""
+    mock_registry = Mock()
+    mock_monitor = Mock()
+    
+    # Mock the monitor to return performance data
+    mock_monitor.get_task_queue_status.return_value = {"queue_length": 5, "max_capacity": 10}
+    mock_monitor.get_current_metrics.return_value = {"stability_score": 0.7}
+    
+    # Mock the registry to return agent info
+    mock_registry.get_all_agents.return_value = {
+        "agent1": {
+            "capabilities": ["coding", "planning"],
+            "current_role": "developer",
+            "performance_metrics": {"success_rate": 0.8},
+            "adaptability_score": 0.8
+        },
+        "agent2": {
+            "capabilities": ["coding", "testing"],
+            "current_role": "developer",
+            "performance_metrics": {"success_rate": 0.7},
+            "adaptability_score": 0.7
+        }
+    }
+    
+    engine = SelfOrganizingEngine(mock_registry, mock_monitor)
+    
+    # Check that evolutionary system is initialized
+    assert engine.evolutionary_system is not None
+    assert engine.evolutionary_system.get_generation() == 0
+    assert len(engine.evolutionary_system.get_strategy_population()) > 0
+    
+    # Test adaptation with evolutionary learning
+    adaptation_result = engine.adapt_system_with_evolutionary_learning()
+    
+    # Check that adaptation was attempted
+    assert "status" in adaptation_result
+    
+    # If adaptation occurred, check evolutionary data
+    if adaptation_result["status"] == "adapted_with_evolutionary":
+        assert "evolutionary_strategy" in adaptation_result
+        assert "evolutionary_data" in adaptation_result
+        assert adaptation_result["evolutionary_data"]["generation"] >= 0
+        assert adaptation_result["evolutionary_data"]["strategy_count"] > 0
+
+
 def test_self_organizing_engine_evaluate_adaptation_needed():
     """Test adaptation evaluation"""
     mock_registry = Mock()
