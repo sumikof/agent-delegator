@@ -230,8 +230,11 @@ def info(template_name: str, format: str, no_color: bool):
 @click.argument("workflow_file", type=click.Path(exists=True))
 @click.option("--parallel", "-p", is_flag=True, help="Execute workflow using parallel processing")
 @click.option("--feedback-loop", "-f", is_flag=True, help="Enable feedback loop with quality reviews")
+@click.option("--brainwave", "-b", is_flag=True, help="Enable brainwave interface for cognitive state monitoring")
+@click.option("--predictive-ui", "-u", is_flag=True, help="Enable predictive UI for adaptive user experience")
+@click.option("--personalized", "-z", is_flag=True, help="Enable personalized experience with cognitive and UI integration")
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed execution output")
-def run(workflow_file: str, parallel: bool, feedback_loop: bool, verbose: bool):
+def run(workflow_file: str, parallel: bool, feedback_loop: bool, brainwave: bool, predictive_ui: bool, personalized: bool, verbose: bool):
     """
     Execute a workflow configuration.
 
@@ -242,9 +245,14 @@ def run(workflow_file: str, parallel: bool, feedback_loop: bool, verbose: bool):
             click.echo(f"Starting workflow execution: {workflow_file}")
             click.echo(f"Parallel mode: {'enabled' if parallel else 'disabled'}")
             click.echo(f"Feedback loop: {'enabled' if feedback_loop else 'disabled'}")
+            click.echo(f"Brainwave interface: {'enabled' if brainwave else 'disabled'}")
+            click.echo(f"Predictive UI: {'enabled' if predictive_ui else 'disabled'}")
+            click.echo(f"Personalized Experience: {'enabled' if personalized else 'disabled'}")
         
         # Execute workflow
-        result = run_workflow(workflow_file, use_parallel=parallel, use_feedback_loop=feedback_loop)
+        result = run_workflow(workflow_file, use_parallel=parallel, use_feedback_loop=feedback_loop, 
+                             use_brainwave=brainwave, use_predictive_ui=predictive_ui, 
+                             use_personalized_experience=personalized)
         
         # Output results
         if verbose:

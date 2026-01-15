@@ -174,7 +174,9 @@ def _execute_stage(stage_name: str, agents: List[str], config: WorkflowConfig) -
     return results
 
 
-def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool = False) -> dict:
+def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool = False, 
+        use_brainwave: bool = False, use_predictive_ui: bool = False, 
+        use_personalized_experience: bool = False) -> dict:
     """Run the orchestrator against a workflow file.
 
     Returns a JSON‑serialisable dictionary matching the common response schema.
@@ -229,7 +231,7 @@ def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool 
         if use_feedback_loop:
             return run_workflow_with_feedback(workflow_path)
         elif use_parallel:
-            return _run_parallel_workflow(config, plugin_manager)
+            return _run_parallel_workflow(config, plugin_manager, use_brainwave, use_predictive_ui, use_personalized_experience)
         else:
             return _run_sequential_workflow(config, plugin_manager)
     finally:
@@ -323,7 +325,7 @@ def _run_sequential_workflow(config: WorkflowConfig, plugin_manager: PluginManag
     return response
 
 
-def _run_parallel_workflow(config: WorkflowConfig, plugin_manager: PluginManager) -> dict:
+def _run_parallel_workflow(config: WorkflowConfig, plugin_manager: PluginManager, use_brainwave: bool = False, use_predictive_ui: bool = False, use_personalized_experience: bool = False) -> dict:
     """Run workflow using parallel execution."""
     import time
     import uuid
@@ -334,7 +336,12 @@ def _run_parallel_workflow(config: WorkflowConfig, plugin_manager: PluginManager
     conflict_resolution_system.start_monitoring()
     
     # Create parallel orchestrator
-    orchestrator = ParallelOrchestrator(agent_registry=AgentRegistry())
+    orchestrator = ParallelOrchestrator(
+        agent_registry=AgentRegistry(), 
+        enable_brainwave=use_brainwave,
+        enable_predictive_ui=use_predictive_ui,
+        enable_personalized_experience=use_personalized_experience
+    )
     
     # Submit tasks for all stages
     task_ids = []
