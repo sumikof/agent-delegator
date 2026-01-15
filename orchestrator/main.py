@@ -34,6 +34,10 @@ from orchestrator.plugin.manager import PluginManager
 from orchestrator.monitoring.metrics_collector import MetricsCollector
 from orchestrator.monitoring.resource_monitor import ResourceMonitor
 from orchestrator.monitoring.stability_tracker import StabilityTracker
+from orchestrator.self_organizing.engine import SelfOrganizingEngine
+from orchestrator.self_organizing.adaptation import AdaptationAlgorithm
+from orchestrator.self_organizing.role_assignment import RoleAssignmentSystem
+from orchestrator.self_organizing.communication import CommunicationTopologyManager
 
 
 # Import feedback loop workflow engine
@@ -44,6 +48,12 @@ from orchestrator.workflow_engine import run_workflow_with_feedback
 metrics_collector = None
 resource_monitor = None
 stability_tracker = None
+
+# Global self-organizing system instances
+self_organizing_engine = None
+adaptation_algorithm = None
+role_assignment_system = None
+communication_topology_manager = None
 
 
 # Simple logger – in a full implementation this would be replaced by a structured
@@ -189,6 +199,31 @@ def run(workflow_file: str, use_parallel: bool = False, use_feedback_loop: bool 
     metrics_collector = MetricsCollector()
     resource_monitor = ResourceMonitor()
     stability_tracker = StabilityTracker()
+    
+    # Initialize self-organizing system
+    global self_organizing_engine, adaptation_algorithm, role_assignment_system, communication_topology_manager
+    
+    # Create agent registry for self-organizing system
+    agent_registry = AgentRegistry()
+    
+    # Initialize self-organizing components
+    adaptation_algorithm = AdaptationAlgorithm()
+    role_assignment_system = RoleAssignmentSystem()
+    communication_topology_manager = CommunicationTopologyManager()
+    
+    # Initialize self-organizing engine
+    self_organizing_engine = SelfOrganizingEngine(agent_registry, metrics_collector)
+    
+    # Register agents with role assignment system
+    for agent_id, agent_info in agent_registry.get_all_agents().items():
+        capabilities = agent_info.get("capabilities", [])
+        current_role = agent_info.get("current_role", "idle")
+        performance_score = agent_info.get("performance_score", 0.5)
+        role_assignment_system.register_agent(agent_id, capabilities, current_role, performance_score)
+    
+    # Initialize communication topology
+    agent_ids = list(agent_registry.get_all_agents().keys())
+    communication_topology_manager.initialize_topology(agent_ids)
 
     try:
         if use_feedback_loop:
@@ -219,6 +254,28 @@ def _run_sequential_workflow(config: WorkflowConfig, plugin_manager: PluginManag
     for stage in config.workflow.stages:
         stage_results = _execute_stage(stage.name, stage.agents, config)
         all_results.extend(stage_results)
+        
+        # Check if system adaptation is needed after each stage
+        if self_organizing_engine and self_organizing_engine.evaluate_adaptation_needed():
+            _log("System adaptation triggered after stage completion")
+            adaptation_result = self_organizing_engine.adapt_system()
+            _log(f"Adaptation result: {adaptation_result['status']}")
+            
+            if adaptation_result['status'] == 'adapted':
+                # Update role assignment based on new structure
+                current_structure = self_organizing_engine.get_system_state()
+                role_assignment = {}
+                for agent_id, profile in current_structure.agent_profiles.items():
+                    role_assignment[agent_id] = profile.current_role
+                
+                # Update communication topology
+                new_topology = communication_topology_manager.optimize_topology(
+                    role_assignment, 
+                    metrics_collector.get_current_metrics()
+                )
+                communication_topology_manager.update_topology(new_topology)
+                
+                _log("System structure adapted successfully")
 
     execution_time = time.time() - start_time
     
@@ -246,6 +303,21 @@ def _run_sequential_workflow(config: WorkflowConfig, plugin_manager: PluginManag
             "performance_metrics": metrics_collector.get_aggregated_stats(),
             "resource_usage": resource_monitor.get_aggregated_stats(),
             "stability": stability_tracker.get_aggregated_stats()
+        }
+    
+    # Add self-organizing system data to response
+    if self_organizing_engine:
+        response["self_organizing"] = {
+            "system_state": {
+                "agent_count": len(self_organizing_engine.get_system_state().agent_profiles),
+                "adaptation_count": 1 if adaptation_result and adaptation_result['status'] == 'adapted' else 0,
+                "last_adaptation_time": self_organizing_engine.last_adaptation_time
+            },
+            "communication_topology": {
+                "link_count": len(communication_topology_manager.get_current_topology().links),
+                "cluster_count": len(communication_topology_manager.get_current_topology().clusters)
+            },
+            "role_distribution": role_assignment_system.get_current_role_distribution()
         }
     
     return response
