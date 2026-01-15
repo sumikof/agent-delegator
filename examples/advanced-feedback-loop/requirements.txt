@@ -1,0 +1,65 @@
+# Sample Requirements for Advanced Feedback Loop Example
+
+## Project Overview
+Build a modern web application with the following features:
+
+### Core Features
+1. User authentication system (JWT-based)
+2. RESTful API backend with Python
+3. React-based frontend with responsive design
+4. Database integration (SQLite for development)
+5. Comprehensive error handling and logging
+
+### Technical Requirements
+1. Backend:
+   - Python 3.10+
+   - FastAPI framework
+   - SQLAlchemy for ORM
+   - Pydantic for data validation
+   - JWT authentication
+   - Comprehensive API documentation (OpenAPI)
+
+2. Frontend:
+   - React 18+
+   - TypeScript
+   - Material-UI for components
+   - React Router for navigation
+   - Axios for API calls
+
+3. Quality Requirements:
+   - Test coverage >= 85%
+   - Code quality score >= 0.9 (using standard linters)
+   - Documentation coverage >= 90%
+   - Performance: API response time < 500ms
+   - Security: OWASP Top 10 compliance
+
+### Non-Functional Requirements
+1. Performance:
+   - Backend: Handle 100 concurrent requests
+   - Frontend: Load time < 2 seconds
+   - Database: Response time < 100ms for queries
+
+2. Security:
+   - Input validation on all API endpoints
+   - CSRF protection
+   - Rate limiting (100 requests/minute per IP)
+   - Secure password storage (bcrypt)
+
+3. Scalability:
+   - Containerized deployment (Docker)
+   - Horizontal scaling capability
+   - Stateless backend services
+
+4. Monitoring:
+   - Comprehensive logging
+   - Health check endpoints
+   - Performance metrics collection
+
+### Delivery Requirements
+1. Complete API specification (OpenAPI 3.0)
+2. Backend source code with tests
+3. Frontend source code with tests
+4. Docker configuration files
+5. Deployment documentation
+6. User manual
+7. Test reports and quality metrics

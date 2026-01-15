@@ -1,0 +1,356 @@
+# Advanced Feedback Loop Workflow Configuration
+# This configuration demonstrates the full feedback loop workflow with quality reviews
+# and iterative improvement cycles.
+
+workflow:
+  name: "advanced-feedback-loop"
+  description: "Advanced web application development with feedback loops"
+  version: "1.0.0"
+  
+  # Enable advanced features
+  features:
+    feedback_loop: true
+    parallel_processing: true
+    quality_audit: true
+    requirements_audit: true
+    error_handling: true
+    resource_monitoring: true
+
+  # Task configuration with feedback loop support
+  tasks:
+    - id: "requirements-gathering"
+      name: "Requirements Gathering"
+      agent: "client_liaison"
+      description: "Gather and document client requirements"
+      input:
+        requirements_file: "requirements.txt"
+      output:
+        - "requirements_summary.md"
+      status: "NEW"
+      max_retries: 3
+      timeout: 300
+
+    - id: "development-planning"
+      name: "Development Planning"
+      agent: "planner"
+      description: "Create comprehensive development plan"
+      dependencies: ["requirements-gathering"]
+      input:
+        requirements_summary: "requirements_summary.md"
+      output:
+        - "development_plan.md"
+      status: "NEW"
+      max_retries: 2
+      timeout: 180
+
+    - id: "api-design"
+      name: "API Design"
+      agent: "api_designer"
+      description: "Design API specification"
+      dependencies: ["development-planning"]
+      input:
+        development_plan: "development_plan.md"
+      output:
+        - "api_specification.yaml"
+      status: "NEW"
+      max_retries: 3
+      timeout: 240
+
+    - id: "backend-development"
+      name: "Backend Development"
+      agent: "backend_dev"
+      description: "Implement backend services"
+      dependencies: ["api-design"]
+      input:
+        api_specification: "api_specification.yaml"
+      output:
+        - "backend_code.py"
+      status: "NEW"
+      max_retries: 3
+      timeout: 600
+
+    - id: "frontend-development"
+      name: "Frontend Development"
+      agent: "frontend_dev"
+      description: "Implement frontend components"
+      dependencies: ["api-design"]
+      input:
+        api_specification: "api_specification.yaml"
+      output:
+        - "frontend_code.js"
+      status: "NEW"
+      max_retries: 3
+      timeout: 600
+
+    - id: "backend-review"
+      name: "Backend Code Review"
+      agent: "reviewer_be"
+      description: "Review backend code quality"
+      dependencies: ["backend-development"]
+      input:
+        backend_code: "backend_code.py"
+        api_specification: "api_specification.yaml"
+      output:
+        - "backend_review_report.md"
+      status: "NEW"
+      max_retries: 2
+      timeout: 300
+
+    - id: "frontend-review"
+      name: "Frontend Code Review"
+      agent: "reviewer_fe"
+      description: "Review frontend code quality"
+      dependencies: ["frontend-development"]
+      input:
+        frontend_code: "frontend_code.js"
+        api_specification: "api_specification.yaml"
+      output:
+        - "frontend_review_report.md"
+      status: "NEW"
+      max_retries: 2
+      timeout: 300
+
+    - id: "quality-audit"
+      name: "Quality Audit"
+      agent: "quality_auditor"
+      description: "Perform comprehensive quality audit"
+      dependencies: ["backend-review", "frontend-review"]
+      input:
+        backend_code: "backend_code.py"
+        frontend_code: "frontend_code.js"
+        backend_review: "backend_review_report.md"
+        frontend_review: "frontend_review_report.md"
+      output:
+        - "quality_audit_report.md"
+      status: "NEW"
+      max_retries: 2
+      timeout: 420
+
+    - id: "requirements-audit"
+      name: "Requirements Audit"
+      agent: "requirements_auditor"
+      description: "Verify compliance with requirements"
+      dependencies: ["quality-audit"]
+      input:
+        requirements_summary: "requirements_summary.md"
+        development_plan: "development_plan.md"
+        api_specification: "api_specification.yaml"
+        backend_code: "backend_code.py"
+        frontend_code: "frontend_code.js"
+        quality_audit: "quality_audit_report.md"
+      output:
+        - "requirements_audit_report.md"
+      status: "NEW"
+      max_retries: 2
+      timeout: 360
+
+    - id: "testing"
+      name: "Comprehensive Testing"
+      agent: "tester"
+      description: "Run comprehensive test suite"
+      dependencies: ["requirements-audit"]
+      input:
+        backend_code: "backend_code.py"
+        frontend_code: "frontend_code.js"
+        api_specification: "api_specification.yaml"
+      output:
+        - "test_report.md"
+      status: "NEW"
+      max_retries: 2
+      timeout: 480
+
+    - id: "integration"
+      name: "Final Integration"
+      agent: "integrator"
+      description: "Integrate all components"
+      dependencies: ["testing"]
+      input:
+        backend_code: "backend_code.py"
+        frontend_code: "frontend_code.js"
+        api_specification: "api_specification.yaml"
+        test_report: "test_report.md"
+      output:
+        - "integration_report.md"
+      status: "NEW"
+      max_retries: 2
+      timeout: 300
+
+  # Feedback loop configuration
+  feedback_loop:
+    enabled: true
+    max_iterations: 5
+    quality_threshold: 0.85
+    
+    # Status transition rules
+    status_transitions:
+      - from: "IN_PROGRESS"
+        to: "IN_REVIEW"
+        condition: "task.completed"
+        
+      - from: "IN_REVIEW"
+        to: "NEEDS_FIXES"
+        condition: "review.quality_score < quality_threshold"
+        
+      - from: "IN_REVIEW"
+        to: "APPROVED"
+        condition: "review.quality_score >= quality_threshold"
+        
+      - from: "NEEDS_FIXES"
+        to: "IN_PROGRESS"
+        condition: "task.requires_fixes"
+        
+      - from: "APPROVED"
+        to: "DONE"
+        condition: "task.finalized"
+
+  # Parallel processing configuration
+  parallel:
+    enabled: true
+    max_workers: 4
+    task_groups:
+      - ["backend-development", "frontend-development"]
+      - ["backend-review", "frontend-review"]
+
+  # Error handling configuration
+  error_handling:
+    max_retries: 3
+    retry_delay: 30
+    fallback_strategy: "escalate_to_human"
+    
+    # Task-specific error handling
+    task_specific:
+      "requirements-gathering":
+        max_retries: 5
+        fallback_strategy: "continue_with_warnings"
+      
+      "quality-audit":
+        max_retries: 3
+        fallback_strategy: "escalate_to_human"
+
+  # Resource monitoring configuration
+  resource_monitoring:
+    enabled: true
+    cpu_threshold: 0.85
+    memory_threshold: 0.90
+    disk_threshold: 0.80
+    
+    # Auto-scaling rules
+    auto_scaling:
+      min_workers: 2
+      max_workers: 8
+      scale_up_threshold: 0.75
+      scale_down_threshold: 0.30
+
+  # Notification configuration
+  notifications:
+    enabled: true
+    channels: ["console", "file"]
+    
+    # Event-specific notifications
+    events:
+      - event: "task_status_change"
+        severity: "INFO"
+        
+      - event: "quality_issue_found"
+        severity: "WARNING"
+        
+      - event: "task_failed"
+        severity: "ERROR"
+        
+      - event: "workflow_completed"
+        severity: "INFO"
+
+agents:
+  - id: "client_liaison"
+    name: "Client Liaison Agent"
+    role: "client_communication"
+    capabilities: ["requirements_analysis", "documentation"]
+    
+  - id: "planner"
+    name: "Planner Agent"
+    role: "planning"
+    capabilities: ["project_planning", "task_breakdown"]
+    
+  - id: "api_designer"
+    name: "API Designer Agent"
+    role: "design"
+    capabilities: ["api_design", "specification_writing"]
+    
+  - id: "backend_dev"
+    name: "Backend Developer Agent"
+    role: "development"
+    capabilities: ["python_development", "api_implementation"]
+    
+  - id: "frontend_dev"
+    name: "Frontend Developer Agent"
+    role: "development"
+    capabilities: ["javascript_development", "ui_implementation"]
+    
+  - id: "reviewer_be"
+    name: "Backend Reviewer Agent"
+    role: "quality_assurance"
+    capabilities: ["code_review", "quality_assessment"]
+    
+  - id: "reviewer_fe"
+    name: "Frontend Reviewer Agent"
+    role: "quality_assurance"
+    capabilities: ["code_review", "quality_assessment"]
+    
+  - id: "quality_auditor"
+    name: "Quality Auditor Agent"
+    role: "quality_assurance"
+    capabilities: ["comprehensive_audit", "quality_scoring"]
+    
+  - id: "requirements_auditor"
+    name: "Requirements Auditor Agent"
+    role: "quality_assurance"
+    capabilities: ["requirements_compliance", "specification_audit"]
+    
+  - id: "tester"
+    name: "Tester Agent"
+    role: "testing"
+    capabilities: ["test_execution", "coverage_analysis"]
+    
+  - id: "integrator"
+    name: "Integrator Agent"
+    role: "integration"
+    capabilities: ["component_integration", "final_validation"]
+
+# Quality metrics configuration
+quality_metrics:
+  code_quality:
+    weight: 0.4
+    thresholds:
+      excellent: 0.9
+      good: 0.7
+      fair: 0.5
+      poor: 0.3
+      
+  test_coverage:
+    weight: 0.3
+    thresholds:
+      excellent: 0.95
+      good: 0.8
+      fair: 0.6
+      poor: 0.4
+      
+  requirements_compliance:
+    weight: 0.3
+    thresholds:
+      excellent: 1.0
+      good: 0.9
+      fair: 0.7
+      poor: 0.5
+
+# Performance monitoring
+performance:
+  enabled: true
+  metrics:
+    - "task_completion_time"
+    - "quality_score"
+    - "retry_count"
+    - "resource_utilization"
+  
+  reporting:
+    interval: 60
+    output: "performance_report.json"
