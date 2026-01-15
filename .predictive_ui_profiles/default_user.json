@@ -1,0 +1,21 @@
+{
+  "user_id": "default_user",
+  "preferences": {
+    "ui_theme": "light",
+    "color_scheme": "default",
+    "layout_compactness": "default",
+    "animation_speed": "normal",
+    "information_density": "medium",
+    "font_size": "medium",
+    "language": "en"
+  },
+  "usage_statistics": {
+    "total_sessions": 0,
+    "total_interactions": 1,
+    "last_active": "2023-01-01T00:00:00"
+  },
+  "feature_preferences": {},
+  "behavioral_patterns": {
+    "click": 1
+  }
+}

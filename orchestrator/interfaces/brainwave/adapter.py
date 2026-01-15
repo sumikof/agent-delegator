@@ -5,6 +5,7 @@ Integrates brainwave interface with the AI agent orchestration system.
 """
 
 from typing import Dict, Any, Optional
+import numpy as np
 from orchestrator.main import Orchestrator
 from .processor import BrainwaveProcessor
 

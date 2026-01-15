@@ -5,7 +5,7 @@ Integrates brainwave interface, predictive UI, and user preferences
 to create a unified personalized experience system.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from orchestrator.parallel.orchestrator import ParallelOrchestrator
 
 class PersonalizedExperienceIntegrator:

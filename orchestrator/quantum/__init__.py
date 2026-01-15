@@ -6,6 +6,6 @@
 
 from .quantum_backend import QuantumBackend
 from .quantum_algorithms import QuantumAlgorithms
-from .hybrid_controller import HybridLearningController
+from .hybrid_controller import HybridLearningController, create_hybrid_controller
 
-__all__ = ['QuantumBackend', 'QuantumAlgorithms', 'HybridLearningController']
+__all__ = ['QuantumBackend', 'QuantumAlgorithms', 'HybridLearningController', 'create_hybrid_controller']
