@@ -24,21 +24,21 @@ from .voice_interface import VoiceInterfaceAgent
 from .registry import AgentRegistry, registry
 from .loader import AgentLoader, loader
 
-# Register all agents with the global registry
+# Register all agents with the global registry (using kebab-case as per schema)
 registry.register("orchestrator", OrchestratorAgent)
-registry.register("client_liaison", ClientLiaisonAgent)
+registry.register("client-liaison", ClientLiaisonAgent)
 registry.register("planner", PlannerAgent)
 registry.register("progress", ProgressAgent)
 registry.register("integrator", IntegratorAgent)
-registry.register("requirements_auditor", RequirementsAuditorAgent)
-registry.register("quality_auditor", QualityAuditorAgent)
+registry.register("requirements-auditor", RequirementsAuditorAgent)
+registry.register("quality-auditor", QualityAuditorAgent)
 registry.register("tester", TesterAgent)
-registry.register("api_designer", APIDesignerAgent)
-registry.register("backend_dev", BackendDevAgent)
-registry.register("frontend_dev", FrontendDevAgent)
-registry.register("reviewer_be", ReviewerBEAgent)
-registry.register("reviewer_fe", ReviewerFEAgent)
-registry.register("voice_interface", VoiceInterfaceAgent)
+registry.register("api-designer", APIDesignerAgent)
+registry.register("backend-dev", BackendDevAgent)
+registry.register("frontend-dev", FrontendDevAgent)
+registry.register("reviewer-be", ReviewerBEAgent)
+registry.register("reviewer-fe", ReviewerFEAgent)
+registry.register("voice-interface", VoiceInterfaceAgent)
 
 __all__ = [
     "Agent",
