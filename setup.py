@@ -17,7 +17,8 @@ setup(
     long_description_content_type="text/markdown",
     author="Agent-Delegate Project",
     python_requires=">=3.10",
-    packages=find_packages(exclude=["tests", "tests.*"]),
+    packages=find_packages(where="src", exclude=["tests", "tests.*"]),
+    package_dir={"": "src"},
     install_requires=[
         "openhands-sdk>=1.8.1",
         "openhands-tools",
