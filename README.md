@@ -12,16 +12,6 @@ OpenHands SDKを使用した仮想開発組織のためのマルチエージェ�
 - [使用方法](#usage)
 - [設定ファイル](#configuration-files)
 - [YAMLファイルガイド（日本語）](#yaml-files-guide-japanese)
-  - [1. ワークフロースキーマ](#1-ワークフロースキーマ)
-  - [2. エージェントインターフェース](#2-エージェントインターフェース)
-  - [3. ウェブフルスタックテンプレート](#3-ウェブフルスタックテンプレート)
-  - [4. 言語ポリシー](#4-言語ポリシー)
-  - [5. ファイルポリシー](#5-ファイルポリシー)
-  - [YAMLファイルの共通ルール](#yamlファイルの共通ルール)
-  - [CLIコマンドでYAMLを検証](#cliコマンドでyamlを検証)
-  - [カスタマイズ方法](#カスタマイズ方法)
-  - [トラブルシューティング](#トラブルシューティング)
-  - [ベストプラクティス](#ベストプラクティス)
 - [開発](#development)
 - [アーキテクチャ](#architecture)
 - [設計原則](#design-principles)
@@ -178,14 +168,16 @@ workflow:
 YAMLファイルの使用方法については、[YAML_FILES_GUIDE.md](YAML_FILES_GUIDE.md)を参照してください。
 
 このガイドには以下の内容が含まれています：
-- ワークフロースキーマの構造と使用方法
-- エージェントインターフェースの定義
-- ウェブフルスタックテンプレートの使い方
-- 言語ポリシーとファイルポリシーの設定
-- YAMLファイルの共通ルール
-- CLIコマンドでの検証方法
-- カスタマイズ方法とベストプラクティス
-- トラブルシューティング
+- [1. ワークフロースキーマ (`schemas/workflow-schema.yaml`)](#1-ワークフロースキーマ-schemasworkflow-schemayaml)
+- [2. エージェントインターフェース (`schemas/agent-interface.yaml`)](#2-エージェントインターフェース-schemasagent-interfaceyaml)
+- [3. ウェブフルスタックテンプレート (`templates/web-fullstack.yaml`)](#3-ウェブフルスタックテンプレート-templatesweb-fullstackyaml)
+- [4. 言語ポリシー (`policies/language-policy.yaml`)](#4-言語ポリシー-policieslanguage-policyyaml)
+- [5. ファイルポリシー (`policies/file-policy.yaml`)](#5-ファイルポリシー-policiesfile-policyyaml)
+- [YAMLファイルの共通ルール](#yamlファイルの共通ルール)
+- [CLIコマンドでYAMLを検証](#cliコマンドでyamlを検証)
+- [カスタマイズ方法](#カスタマイズ方法)
+- [トラブルシューティング](#トラブルシューティング)
+- [ベストプラクティス](#ベストプラクティス)
 
 ## 開発
 
