@@ -8,7 +8,7 @@ from pathlib import Path
 # ===== Path Definitions =====
 
 # Project root directory
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 
 # Configuration directories
 SCHEMAS_DIR = PROJECT_ROOT / "schemas"
