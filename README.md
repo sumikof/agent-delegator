@@ -1,17 +1,17 @@
-# Agent-Delegate Orchestration System
+# エージェント委譲オーケストレーションシステム
 
-Multi-agent orchestration system using OpenHands SDK for virtual development organizations.
+OpenHands SDKを使用した仮想開発組織のためのマルチエージェントオーケストレーションシステム。
 
-## Overview
+## 概要
 
-This system provides a configuration-driven framework for orchestrating multiple AI agents to work together on software development projects. Agents are organized into workflows with defined stages, responsibilities, and quality gates.
+このシステムは、ソフトウェア開発プロジェクトで複数のAIエージェントが協力して作業できるように、設定駆動型のフレームワークを提供します。エージェントは、定義されたステージ、責任、および品質ゲートを持つワークフローに組織されます。
 
-## Table of Contents
+## 目次
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [Configuration Files](#configuration-files)
-- [YAML Files Guide (Japanese)](#yaml-files-guide-japanese)
+- [インストール](#installation)
+- [使用方法](#usage)
+- [設定ファイル](#configuration-files)
+- [YAMLファイルガイド（日本語）](#yaml-files-guide-japanese)
   - [1. ワークフロースキーマ](#1-ワークフロースキーマ)
   - [2. エージェントインターフェース](#2-エージェントインターフェース)
   - [3. ウェブフルスタックテンプレート](#3-ウェブフルスタックテンプレート)
@@ -22,91 +22,91 @@ This system provides a configuration-driven framework for orchestrating multiple
   - [カスタマイズ方法](#カスタマイズ方法)
   - [トラブルシューティング](#トラブルシューティング)
   - [ベストプラクティス](#ベストプラクティス)
-- [Development](#development)
-- [Architecture](#architecture)
-- [Design Principles](#design-principles)
-- [References](#references)
-- [Version](#version)
+- [開発](#development)
+- [アーキテクチャ](#architecture)
+- [設計原則](#design-principles)
+- [参考資料](#references)
+- [バージョン](#version)
 
-## Installation
+## インストール
 
-### Using Python Virtual Environment
+### Python仮想環境の使用
 
 ```bash
-# Activate virtual environment
+# 仮想環境をアクティベート
 source .venv/bin/activate
 
-# Install dependencies
+# 依存関係をインストール
 pip install -r requirements.txt
 ```
 
-## Usage
+## 使用方法
 
-### CLI Commands
+### CLIコマンド
 
-The CLI can be run using Python module syntax:
+CLIはPythonモジュール構文を使用して実行できます：
 
 ```bash
 python -m orchestrator.cli [COMMAND] [OPTIONS]
 ```
 
-Or use the provided wrapper script:
+または、提供されているラッパースクリプトを使用します：
 
 ```bash
 ./agent-delegate [COMMAND] [OPTIONS]
 ```
 
-#### Available Commands
+#### 利用可能なコマンド
 
-**1. Validate a workflow configuration**
+**1. ワークフロー設定の検証**
 ```bash
 python -m orchestrator.cli validate <workflow-file>
 python -m orchestrator.cli validate templates/web-fullstack.yaml
 python -m orchestrator.cli validate my-workflow.yaml --verbose
 ```
 
-**2. Display workflow structure**
+**2. ワークフロー構造の表示**
 ```bash
 python -m orchestrator.cli show <workflow-file>
 python -m orchestrator.cli show templates/web-fullstack.yaml
 python -m orchestrator.cli show templates/web-fullstack.yaml --format=json
 ```
 
-**3. List available templates**
+**3. 利用可能なテンプレートのリスト**
 ```bash
 python -m orchestrator.cli list-templates
 ```
 
-**4. Show template details**
+**4. テンプレートの詳細を表示**
 ```bash
 python -m orchestrator.cli info <template-name>
 python -m orchestrator.cli info web-fullstack
 ```
 
-**5. Show version**
+**5. バージョンを表示**
 ```bash
 python -m orchestrator.cli --version
 ```
 
-### Example Output
+### 実行例
 
 ```
 $ python -m orchestrator.cli show templates/web-fullstack.yaml
 
-Workflow Configuration: Web Fullstack Project
+ワークフロー設定: Webフルスタックプロジェクト
 ============================================================
 
-Project Details:
-  Name: Web Fullstack Project
-  Type: web
-  Description: Full-stack web application with API backend and frontend
+プロジェクトの詳細:
+  名前: Webフルスタックプロジェクト
+  タイプ: web
+  説明: APIバックエンドとフロントエンドを持つフルスタックWebアプリケーション
 
-Agent Templates:
+エージェントテンプレート:
   ✓ core
   ✓ quality
   ✓ web-development
 
-Workflow Stages (7):
+ワークフローステージ (7):
   1. intake [sequential]
      → client-liaison
   2. requirements-audit [sequential]
@@ -114,36 +114,36 @@ Workflow Stages (7):
   ...
 ```
 
-## Project Structure
+## プロジェクト構造
 
 ```
 agent-delegate/
-├── orchestrator/               # Main package
-│   ├── config/                # Configuration loading & validation
-│   │   ├── loader.py         # YAML workflow loader
-│   │   ├── validator.py      # JSON Schema validator
-│   │   └── models.py         # Pydantic data models
-│   ├── display/              # Output formatting
-│   │   └── formatter.py      # Workflow formatter
-│   ├── utils/                # Utilities & constants
-│   │   └── constants.py      # Enums & constants
-│   └── cli.py                # CLI application
-├── schemas/                   # JSON Schema definitions
-│   ├── workflow-schema.yaml  # Workflow configuration schema
-│   └── agent-interface.yaml  # Agent interface schema
-├── templates/                 # Built-in workflow templates
-│   └── web-fullstack.yaml    # Web fullstack template
-├── policies/                  # System policies
-│   ├── language-policy.yaml  # Language usage rules
-│   └── file-policy.yaml      # File operation rules
-└── tests/                     # Unit tests
+├── orchestrator/               # メインパッケージ
+│   ├── config/                # 設定の読み込みと検証
+│   │   ├── loader.py         # YAMLワークフローローダー
+│   │   ├── validator.py      # JSONスキーマバリデーター
+│   │   └── models.py         # Pydanticデータモデル
+│   ├── display/              # 出力フォーマット
+│   │   └── formatter.py      # ワークフローフォーマッター
+│   ├── utils/                # ユーティリティと定数
+│   │   └── constants.py      # 列挙型と定数
+│   └── cli.py                # CLIアプリケーション
+├── schemas/                   # JSONスキーマ定義
+│   ├── workflow-schema.yaml  # ワークフロー設定スキーマ
+│   └── agent-interface.yaml  # エージェントインターフェーススキーマ
+├── templates/                 # ビルトインワークフローテンプレート
+│   └── web-fullstack.yaml    # Webフルスタックテンプレート
+├── policies/                  # システムポリシー
+│   ├── language-policy.yaml  # 言語使用ルール
+│   └── file-policy.yaml      # ファイル操作ルール
+└── tests/                     # ユニットテスト
 ```
 
-## Configuration Files
+## 設定ファイル
 
-### Workflow Configuration
+### ワークフロー設定
 
-Workflows are defined in YAML files following the schema in `schemas/workflow-schema.yaml`:
+ワークフローは、`schemas/workflow-schema.yaml`のスキーマに従ってYAMLファイルで定義されます：
 
 ```yaml
 version: "1.0"
@@ -166,12 +166,12 @@ workflow:
         required_status: OK
 ```
 
-### Available Templates
+### 利用可能なテンプレート
 
-- **web-fullstack**: Full-stack web application (7 stages, 14 agents)
-  - Includes: customer liaison, requirements audit, API design, parallel BE/FE implementation, review/QA, integration
+- **web-fullstack**: フルスタックWebアプリケーション（7ステージ、14エージェント）
+  - 含まれる内容：顧客連絡、要件監査、API設計、並列BE/FE実装、レビュー/QA、統合
 
-More templates (mobile, infrastructure, data-pipeline) will be added in future iterations.
+今後のイテレーションで追加予定のテンプレート：モバイル、インフラ、データパイプライン
 
 ## YAML Files Guide (Japanese)
 
@@ -437,65 +437,65 @@ python -m orchestrator.cli list-templates
 4. **バージョン管理**: Gitで管理し、変更履歴を残す
 5. **ドキュメント**: コメントを活用して設定の意図を明確化
 
-## Development
+## 開発
 
-### Running Tests
+### テストの実行
 
 ```bash
-# Install dev dependencies
+# 開発依存関係をインストール
 pip install -r requirements-dev.txt
 
-# Run tests
+# テストを実行
 pytest tests/ -v
 
-# Run with coverage
+# カバレッジ付きで実行
 pytest tests/ --cov=orchestrator --cov-report=html
 ```
 
-### Code Quality
+### コード品質
 
 ```bash
-# Format code
+# コードをフォーマット
 black orchestrator/ tests/
 
-# Lint
+# リント
 ruff check orchestrator/ tests/
 
-# Type checking
+# 型チェック
 mypy orchestrator/
 ```
 
-## Architecture
+## アーキテクチャ
 
-This implementation (Iteration 1) provides:
-- ✓ Configuration loading from YAML files
-- ✓ JSON Schema validation
-- ✓ Pydantic model validation
-- ✓ CLI interface for validation and display
-- ✓ Template system
+この実装（イテレーション1）では以下を提供します：
+- ✓ YAMLファイルからの設定読み込み
+- ✓ JSONスキーマ検証
+- ✓ Pydanticモデル検証
+- ✓ 検証と表示のためのCLIインターフェース
+- ✓ テンプレートシステム
 
-Future iterations will add:
-- Orchestration engine (workflow execution)
-- OpenHands SDK integration (agent spawning)
-- State management
-- Context management
-- Error handling implementation
-- Logging infrastructure
+今後のイテレーションで追加予定：
+- オーケストレーションエンジン（ワークフロー実行）
+- OpenHands SDK統合（エージェント生成）
+- 状態管理
+- コンテキスト管理
+- エラーハンドリング実装
+- ロギングインフラストラクチャ
 
-## Design Principles
+## 設計原則
 
-1. **Configuration-Driven**: All workflows defined in YAML
-2. **Type-Safe**: Pydantic models for validation
-3. **Incremental**: Minimal viable features first
-4. **Extensible**: Clear extension points for future features
+1. **設定駆動**：すべてのワークフローをYAMLで定義
+2. **型安全**：検証のためのPydanticモデル
+3. **段階的**：最小限の機能から開始
+4. **拡張可能**：将来の機能のための明確な拡張ポイント
 
-## References
+## 参考資料
 
-- Design Document: `agent-delegation.md`
-- Project Guide: `CLAUDE.md`
-- Schemas: `schemas/`
-- Implementation Plan: `.claude/plans/linked-toasting-quiche.md`
+- 設計ドキュメント：`agent-delegation.md`
+- プロジェクトガイド：`CLAUDE.md`
+- スキーマ：`schemas/`
+- 実装計画：`.claude/plans/linked-toasting-quiche.md`
 
-## Version
+## バージョン
 
-Current version: 0.1.0 (Iteration 1)
+現在のバージョン：0.1.0（イテレーション1）

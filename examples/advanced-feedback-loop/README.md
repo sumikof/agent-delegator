@@ -1,57 +1,57 @@
-# Advanced Feedback Loop Example
+# 高度なフィードバックループの例
 
-This example demonstrates the advanced feedback loop workflow with quality reviews, iterative improvements, and error handling.
+この例は、品質レビュー、反復的な改善、およびエラーハンドリングを備えた高度なフィードバックループワークフローを示します。
 
-## Overview
+## 概要
 
-This example shows how to:
-1. Set up a feedback loop workflow with quality reviews
-2. Configure agents for iterative development and review cycles
-3. Handle error conditions and implement fallback mechanisms
-4. Use the extended task status system (IN_REVIEW, NEEDS_FIXES, APPROVED, REJECTED)
+この例では、以下の方法を示します：
+1. 品質レビューを備えたフィードバックループワークフローの設定
+2. 反復的な開発とレビューサイクルのためのエージェントの設定
+3. エラー条件の処理とフォールバックメカニズムの実装
+4. 拡張タスクステータスシステム（IN_REVIEW、NEEDS_FIXES、APPROVED、REJECTED）の使用
 
-## Files
+## ファイル
 
-- `workflow.yaml`: Main workflow configuration with feedback loop
-- `requirements.txt`: Sample requirements file
-- `expected_output/`: Directory containing expected output examples
-- `tutorial/`: Step-by-step guide for the feedback loop process
+- `workflow.yaml`: フィードバックループを備えたメインのワークフロー設定
+- `requirements.txt`: サンプル要件ファイル
+- `expected_output/`: 期待される出力例を含むディレクトリ
+- `tutorial/`: フィードバックループプロセスのステップバイステップガイド
 
-## Running the Example
+## 例の実行
 
 ```bash
 cd /workspace/examples/advanced-feedback-loop
 python -m orchestrator.cli run --config workflow.yaml
 ```
 
-## Workflow Description
+## ワークフローの説明
 
-This workflow includes:
-1. Client liaison to gather requirements
-2. Planner to create development plan
-3. API designer for API specification
-4. Backend developer for server-side code
-5. Frontend developer for client-side code
-6. Quality auditor for code quality reviews
-7. Requirements auditor for specification compliance
-8. Reviewers for detailed code reviews
-9. Tester for validation
-10. Integrator for final integration
+このワークフローには以下が含まれます：
+1. 要件を収集するためのクライアント連絡
+2. 開発計画を作成するためのプランナー
+3. API仕様を作成するためのAPIデザイナー
+4. サーバーサイドコードを作成するためのバックエンド開発者
+5. クライアントサイドコードを作成するためのフロントエンド開発者
+6. コード品質レビューを行うための品質監査
+7. 仕様のコンプライアンスを確認するための要件監査
+8. 詳細なコードレビューを行うためのレビュアー
+9. 検証を行うためのテスター
+10. 最終的な統合を行うためのインテグレーター
 
-The workflow demonstrates:
-- Automatic feedback generation from quality audits
-- Task status transitions (NEW → IN_PROGRESS → IN_REVIEW → NEEDS_FIXES → IN_PROGRESS → IN_REVIEW → APPROVED → DONE)
-- Error handling and fallback mechanisms
-- Parallel processing of independent tasks
-- Resource monitoring and load balancing
+このワークフローは以下を示します：
+- 品質監査からの自動フィードバック生成
+- タスクステータスの遷移（NEW → IN_PROGRESS → IN_REVIEW → NEEDS_FIXES → IN_PROGRESS → IN_REVIEW → APPROVED → DONE）
+- エラーハンドリングとフォールバックメカニズム
+- 独立したタスクの並列処理
+- リソース監視と負荷分散
 
-## Expected Output
+## 期待される出力
 
-The workflow will generate:
-- API specification files
-- Backend and frontend code
-- Quality audit reports with detailed findings
-- Review comments and improvement suggestions
-- Test reports with coverage analysis
-- Integration results with performance metrics
-- Complete audit trail of task status transitions
+ワークフローは以下を生成します：
+- API仕様ファイル
+- バックエンドとフロントエンドのコード
+- 詳細な調査結果を含む品質監査レポート
+- レビューコメントと改善提案
+- カバレッジ分析を含むテストレポート
+- パフォーマンスメトリクスを含む統合結果
+- タスクステータス遷移の完全な監査トレイル

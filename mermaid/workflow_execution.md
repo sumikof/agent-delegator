@@ -1,20 +1,20 @@
-# Workflow Execution Diagram
+# ワークフロー実行図
 
 ```mermaid
 graph LR
-    A[Start] --> B[Intake]
-    B --> C[Requirements Check]
-    C --> D[Plan]
-    D --> E[Contract]
-    E --> F[Implementation]
-    F --> G[Review & QA]
-    G --> H[Integration]
-    H --> I[Done]
+    A[開始] --> B[受付]
+    B --> C[要件チェック]
+    C --> D[計画]
+    D --> E[契約]
+    E --> F[実装]
+    F --> G[レビュー＆QA]
+    G --> H[統合]
+    H --> I[完了]
     
-    G -->|NG| J[Progress Re-planning]
+    G -->|NG| J[進捗再計画]
     J --> F
     
-    subgraph "Core Agents"
+    subgraph "コアエージェント"
     B1[client-liaison] --> B
     C1[requirements-auditor] --> C
     D1[planner] --> D
@@ -22,34 +22,34 @@ graph LR
     H1[integrator] --> H
     end
     
-    subgraph "Development Agents"
+    subgraph "開発エージェント"
     F1[backend-dev] --> F
     F2[frontend-dev] --> F
     end
     
-    subgraph "Quality Agents"
+    subgraph "品質エージェント"
     G1[reviewer-be] --> G
     G2[reviewer-fe] --> G
     G3[tester] --> G
     G4[quality-auditor] --> G
     end
     
-    subgraph "Progress Management"
+    subgraph "進捗管理"
     J1[progress] --> J
     end
 ```
 
-## Workflow Execution Description
+## ワークフロー実行の説明
 
-This diagram illustrates the workflow execution process:
+この図は、ワークフロー実行プロセスを示しています：
 
-1. **Intake**: Client liaison gathers requirements from the customer
-2. **Requirements Check**: Requirements auditor validates and checks for ambiguities
-3. **Plan**: Planner creates the development plan and task breakdown
-4. **Contract**: API designer creates the API specification (Single Source of Truth)
-5. **Implementation**: Backend and frontend developers work in parallel
-6. **Review & QA**: Multiple quality agents review and test the implementation
-7. **Integration**: Integrator combines all components and performs final validation
-8. **Progress Re-planning**: If any stage fails (NG), the progress agent creates a re-planning proposal
+1. **受付**：クライアント連絡が顧客から要件を収集
+2. **要件チェック**：要件監査が要件を検証し、あいまいさをチェック
+3. **計画**：プランナーが開発計画とタスクの分解を作成
+4. **契約**：APIデザイナーがAPI仕様（Single Source of Truth）を作成
+5. **実装**：バックエンドとフロントエンドの開発者が並列で作業
+6. **レビュー＆QA**：複数の品質エージェントが実装をレビューおよびテスト
+7. **統合**：インテグレーターがすべてのコンポーネントを組み合わせて最終検証を実行
+8. **進捗再計画**：ステージが失敗した場合（NG）、進捗エージェントが再計画提案を作成
 
-The workflow supports both sequential and parallel execution where appropriate, with automatic error handling and fallback mechanisms.
+ワークフローは、適切な場所で順次および並列実行の両方をサポートし、自動エラーハンドリングとフォールバックメカニズムを備えています。

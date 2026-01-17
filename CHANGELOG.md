@@ -1,63 +1,62 @@
-# Changelog
+# 変更履歴
 
-All notable changes to this project will be documented in this file.
+このプロジェクトのすべての注目すべき変更は、このファイルに文書化されます。
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+フォーマットは[Keep a Changelog](https://keepachangelog.com/en/1.0.0/)に基づいており、このプロジェクトは[セマンティックバージョニング](https://semver.org/spec/v2.0.0.html)に準拠しています。
 
-## [Unreleased]
+## [未リリース]
 
-### Added
+### 追加
 
-- **Examples and Documentation**: Added comprehensive examples directory with a simple web app workflow example including:
-  - `examples/simple-web-app/workflow.yaml`: Complete workflow configuration
-  - `examples/simple-web-app/requirements.txt`: Sample requirements file
-  - `examples/simple-web-app/expected_output/`: Expected output examples
-  - Updated `agent-delegation.md` with module structure, CLI guide, templates, and agent definitions
+- **例とドキュメント**: 簡単なWebアプリワークフローの例を含む包括的な例ディレクトリを追加:
+  - `examples/simple-web-app/workflow.yaml`: 完全なワークフロー設定
+  - `examples/simple-web-app/requirements.txt`: サンプル要件ファイル
+  - `examples/simple-web-app/expected_output/`: 期待される出力例
+  - モジュール構造、CLIガイド、テンプレート、エージェント定義で`agent-delegation.md`を更新
 
-- **Mermaid Diagrams**: Added visual documentation:
-  - `mermaid/module_structure.md`: Module structure diagram
-  - `mermaid/workflow_execution.md`: Workflow execution diagram
+- **Mermaid図**: ビジュアルドキュメントを追加:
+  - `mermaid/module_structure.md`: モジュール構造図
+  - `mermaid/workflow_execution.md`: ワークフロー実行図
 
-- **Schema Validation**: Added comprehensive schema validation:
-  - `validate_schema.py`: Validation script for workflow configurations
-  - Validated all templates and examples against the workflow schema
+- **スキーマ検証**: 包括的なスキーマ検証を追加:
+  - `validate_schema.py`: ワークフロー設定の検証スクリプト
+  - すべてのテンプレートと例をワークフロースキーマに対して検証
 
-- **CI/CD Pipeline**: Added GitHub Actions workflow:
-  - `.github/workflows/lint_and_test.yml`: Linting, testing, and validation workflow
-  - Includes Black formatting, Flake8 linting, and schema validation
+- **CI/CDパイプライン**: GitHub Actionsワークフローを追加:
+  - `.github/workflows/lint_and_test.yml`: リント、テスト、検証ワークフロー
+  - Blackフォーマット、Flake8リント、スキーマ検証を含む
 
-- **Policy Updates**: Updated file policies:
-  - Added CI/CD file restrictions
-  - Added examples directory permissions
-  - Enhanced security constraints
+- **ポリシー更新**: ファイルポリシーを更新:
+  - CI/CDファイル制限を追加
+  - 例ディレクトリのパーミッションを追加
+  - セキュリティ制約を強化
 
-### Changed
+### 変更
 
-- **Code Formatting**: Applied Black code formatting to entire codebase
-- **Static Analysis**: Fixed Flake8 issues throughout the codebase
-- **Template Cleanup**: Removed duplicate YAML documents from templates
-- **Import Optimization**: Cleaned up unused imports and dependencies
+- **コードフォーマット**: コードベース全体にBlackコードフォーマットを適用
+- **静的解析**: コードベース全体のFlake8の問題を修正
+- **テンプレートクリーンアップ**: テンプレートから重複するYAMLドキュメントを削除
+- **インポート最適化**: 未使用のインポートと依存関係をクリーンアップ
 
-### Fixed
+### 修正
 
-- **Schema Compliance**: Fixed workflow configuration to match schema requirements
-- **CLI Issues**: Fixed ambiguous variable names in CLI error handling
-- **Configuration Loading**: Fixed unused variables in config loader
-- **Model Validation**: Fixed undefined name issues in Pydantic models
+- **スキーマコンプライアンス**: スキーマ要件に一致するようにワークフロー設定を修正
+- **CLIの問題**: CLIエラーハンドリングのあいまいな変数名を修正
+- **設定読み込み**: 設定ローダーの未使用変数を修正
+- **モデル検証**: Pydanticモデルの未定義名の問題を修正
 
 ## [0.1.0] - 2024-01-01
 
-### Added
+### 追加
 
-- Initial project structure and core modules
-- Basic orchestration framework
-- Agent interface definitions
-- Workflow schema definitions
-- Core agent implementations
-- Configuration loading and validation
-- CLI interface
-- Unit and integration tests
+- 初期プロジェクト構造とコアモジュール
+- 基本的なオーケストレーションフレームワーク
+- エージェントインターフェース定義
+- ワークフロースキーマ定義
+- コアエージェント実装
+- 設定読み込みと検証
+- CLIインターフェース
+- ユニットと統合テスト
 
-[Unreleased]: https://github.com/openhands/agent-delegate/compare/v0.1.0...HEAD
+[未リリース]: https://github.com/openhands/agent-delegate/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/openhands/agent-delegate/releases/tag/v0.1.0

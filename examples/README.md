@@ -1,42 +1,42 @@
-# Examples Directory
+# 例ディレクトリ
 
-This directory contains sample projects demonstrating how to use the OpenHands Agent Delegation system.
+このディレクトリには、OpenHands Agent Delegationシステムの使用方法を示すサンプルプロジェクトが含まれています。
 
-## Available Examples
+## 利用可能な例
 
-- `simple-web-app/`: A simple web application development workflow example
-- `advanced-feedback-loop/`: An advanced example demonstrating feedback loops, quality reviews, and iterative improvements
+- `simple-web-app/`: 簡単なWebアプリケーション開発ワークフローの例
+- `advanced-feedback-loop/`: フィードバックループ、品質レビュー、および反復的な改善を示す高度な例
 
-## How to Use
+## 使用方法
 
-Each example directory contains:
-- A workflow configuration file
-- Sample input files
-- Expected output examples
-- A README explaining how to run the example
-- Tutorial documentation (for advanced examples)
+各例ディレクトリには以下が含まれています：
+- ワークフロー設定ファイル
+- サンプル入力ファイル
+- 期待される出力例
+- 例の実行方法を説明するREADME
+- チュートリアルドキュメント（高度な例用）
 
-To run an example:
+例を実行するには：
 
 ```bash
 cd examples/<example-name>
 python -m orchestrator.cli run --config workflow.yaml
 ```
 
-## Example Comparison
+## 例の比較
 
-| Example | Complexity | Features | Best For |
+| 例 | 複雑さ | 特徴 | 最適な使用場面 |
 |---------|------------|----------|----------|
-| `simple-web-app` | Basic | Linear workflow, basic agents | Getting started, simple projects |
-| `advanced-feedback-loop` | Advanced | Feedback loops, quality reviews, parallel processing, error handling | Production use, complex projects, quality assurance |
+| `simple-web-app` | 基本 | 線形ワークフロー、基本エージェント | 入門、簡単なプロジェクト |
+| `advanced-feedback-loop` | 高度 | フィードバックループ、品質レビュー、並列処理、エラーハンドリング | 本番使用、複雑なプロジェクト、品質保証 |
 
-## Tutorials
+## チュートリアル
 
-The `advanced-feedback-loop` example includes a comprehensive step-by-step guide covering:
-- Feedback loop mechanics and status transitions
-- Quality audit processes
-- Error handling and fallback strategies
-- Performance optimization techniques
-- Troubleshooting common issues
+`advanced-feedback-loop`の例には、以下をカバーする包括的なステップバイステップガイドが含まれています：
+- フィードバックループのメカニズムとステータス遷移
+- 品質監査プロセス
+- エラーハンドリングとフォールバック戦略
+- パフォーマンス最適化技術
+- 一般的な問題のトラブルシューティング
 
-See `examples/advanced-feedback-loop/tutorial/step-by-step-guide.md` for detailed instructions.
+詳細な手順については、`examples/advanced-feedback-loop/tutorial/step-by-step-guide.md`を参照してください。

@@ -1,4 +1,4 @@
-# Module Structure Diagram
+# モジュール構造図
 
 ```mermaid
 graph TD
@@ -42,14 +42,14 @@ graph TD
     H --> H3[state_machine.py]
 ```
 
-## Module Structure Description
+## モジュール構造の説明
 
-This diagram shows the hierarchical structure of the OpenHands Agent Delegation system:
+この図は、OpenHands Agent Delegationシステムの階層構造を示しています：
 
-1. **Main Modules**: The core components of the orchestrator
-2. **Config**: Configuration loading and validation
-3. **Agents**: Agent definitions organized by category
-4. **Utils**: Utility functions for common operations
-5. **Display**: User interface and display components
+1. **メインモジュール**：オーケストレーターのコアコンポーネント
+2. **Config**：設定の読み込みと検証
+3. **Agents**：カテゴリ別に整理されたエージェント定義
+4. **Utils**：一般的な操作のためのユーティリティ関数
+5. **Display**：ユーザーインターフェースと表示コンポーネント
 
-The structure follows a modular design where each component has a specific responsibility and can be extended independently.
+この構造は、各コンポーネントが特定の責任を持ち、独立して拡張できるモジュール設計に従っています。

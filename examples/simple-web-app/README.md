@@ -1,43 +1,43 @@
-# Simple Web Application Example
+# 簡単なWebアプリケーションの例
 
-This example demonstrates a simple web application development workflow using the OpenHands Agent Delegation system.
+この例は、OpenHands Agent Delegationシステムを使用した簡単なWebアプリケーション開発ワークフローを示します。
 
-## Overview
+## 概要
 
-This example shows how to:
-1. Set up a basic web application workflow
-2. Configure agents for different development phases
-3. Run the orchestration process
+この例では、以下の方法を示します：
+1. 基本的なWebアプリケーションワークフローの設定
+2. 異なる開発フェーズのためのエージェントの設定
+3. オーケストレーションプロセスの実行
 
-## Files
+## ファイル
 
-- `workflow.yaml`: Main workflow configuration
-- `requirements.txt`: Sample requirements file
-- `expected_output/`: Directory containing expected output examples
+- `workflow.yaml`: メインのワークフロー設定
+- `requirements.txt`: サンプル要件ファイル
+- `expected_output/`: 期待される出力例を含むディレクトリ
 
-## Running the Example
+## 例の実行
 
 ```bash
 cd /workspace/examples/simple-web-app
 python -m orchestrator.cli run --config workflow.yaml
 ```
 
-## Workflow Description
+## ワークフローの説明
 
-This workflow includes:
-1. Client liaison to gather requirements
-2. Planner to create development plan
-3. API designer for API specification
-4. Backend developer for server-side code
-5. Frontend developer for client-side code
-6. Reviewers for code quality checks
-7. Tester for validation
-8. Integrator for final integration
+このワークフローには以下が含まれます：
+1. 要件を収集するためのクライアント連絡
+2. 開発計画を作成するためのプランナー
+3. API仕様を作成するためのAPIデザイナー
+4. サーバーサイドコードを作成するためのバックエンド開発者
+5. クライアントサイドコードを作成するためのフロントエンド開発者
+6. コード品質チェックを行うためのレビュアー
+7. 検証を行うためのテスター
+8. 最終的な統合を行うためのインテグレーター
 
-## Expected Output
+## 期待される出力
 
-The workflow will generate:
-- API specification files
-- Backend and frontend code
-- Test reports
-- Integration results
+ワークフローは以下を生成します：
+- API仕様ファイル
+- バックエンドとフロントエンドのコード
+- テストレポート
+- 統合結果
